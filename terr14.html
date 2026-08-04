@@ -1,0 +1,1945 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<!--
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",
+    authDomain: "mapa3-terr.firebaseapp.com",
+    databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",
+    projectId: "mapa3-terr",
+    storageBucket: "mapa3-terr.firebasestorage.app",
+    messagingSenderId: "15579279461",
+    appId: "1:15579279461:web:5ce5d4705353506262968c"
+  };  -->
+
+  <!--
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+    -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🗺️ Sistema de Controle de Territórios v7.0 - Vértices</title>
+
+    <!-- ... seu CSS e meta tags existentes ... -->
+    
+    <!-- 
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║  SDK DO FIREBASE — BIBLIOTECA QUE CONECTA SEU SITE À NUVEM           ║
+    ║  Esses 3 scripts carregam as ferramentas do Firebase no navegador    ║
+    ╚══════════════════════════════════════════════════════════════════════╝
+    -->
+    
+    <!-- Script principal do Firebase (núcleo) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    
+    <!-- Script do banco de dados em tempo real -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    
+    <!-- SEU CSS EXISTENTE ... -->
+    <style>
+        /* ... mantenha todo o seu CSS aqui ... */
+               * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+        }
+
+        :root {
+            --top-bar-height: 95px;
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--top-bar-height);
+            background: rgba(10, 10, 30, 0.95);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6px 12px;
+            gap: 6px;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .top-bar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 32px;
+        }
+
+        .top-bar h1 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #00ff88;
+            white-space: nowrap;
+        }
+
+        .territory-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .territory-controls label {
+            font-size: 12px;
+            color: #aaa;
+            white-space: nowrap;
+        }
+
+        .territory-input {
+            width: 52px;
+            background: linear-gradient(145deg, #1e1e3f, #151530);
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            color: #00ff88;
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+            appearance: textfield;
+        }
+
+        .territory-input::-webkit-outer-spin-button,
+        .territory-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .territory-input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-territory {
+            flex: 1;
+            min-width: 0;
+            justify-content: center;
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+
+        .btn-mark-all {
+            background: linear-gradient(145deg, #004d2a, #003d1f);
+            border-color: rgba(0, 255, 136, 0.4);
+            color: #00ff88;
+        }
+
+        .btn-mark-all:hover {
+            background: linear-gradient(145deg, #006b3a, #004d2a);
+            border-color: #00ff88;
+        }
+
+        .btn-unmark-all {
+            background: linear-gradient(145deg, #3a2020, #2a1515);
+            border-color: rgba(255, 100, 100, 0.35);
+            color: #ffaaaa;
+        }
+
+        .btn-unmark-all:hover {
+            background: linear-gradient(145deg, #502828, #3a2020);
+            border-color: rgba(255, 100, 100, 0.6);
+        }
+
+        .controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #1e1e3f, #151530);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 7px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: linear-gradient(145deg, #2a2a5a, #202050);
+            border-color: rgba(0, 255, 136, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .btn-zoom {
+            font-size: 16px;
+            padding: 6px 10px;
+            min-width: 38px;
+            justify-content: center;
+        }
+
+        .btn-reset {
+            background: linear-gradient(145deg, #5c0000, #3a0000);
+        }
+
+        .btn-reset:hover {
+            background: linear-gradient(145deg, #7a0000, #5c0000);
+        }
+
+        .map-container {
+            position: fixed;
+            top: var(--top-bar-height);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            background: #050510;
+            cursor: grab;
+        }
+
+        .map-container:active {
+            cursor: grabbing;
+        }
+
+        .map-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .map-image {
+            display: block;
+            max-width: 100vw;
+            max-height: calc(100vh - var(--top-bar-height));
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .overlay-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: all;
+        }
+
+        /* ================================================================
+           VÉRTICES - Pontos clicáveis nas esquinas das quadras
+           ================================================================ */
+        .vertex {
+            fill: rgba(255, 255, 255, 0.6);
+            stroke: rgba(0, 255, 136, 0.8);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .vertex:hover {
+            fill: #00ff88;
+            stroke: #fff;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.8));
+            r: 10;
+        }
+
+        .vertex.selected {
+            fill: #00ff88;
+            stroke: #fff;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 12px rgba(0, 255, 136, 1));
+            r: 10;
+        }
+
+        .vertex.pending {
+            fill: rgba(255, 200, 0, 0.8);
+            stroke: #ffc800;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.8));
+            animation: pulse 1s infinite;
+        }
+
+        /* ================================================================
+           ARESTAS (FACES) - Linhas verdes entre vértices
+           ================================================================ */
+        .edge {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 20;
+            /* Área de toque grande */
+            stroke-linecap: round;
+            cursor: pointer;
+            pointer-events: stroke;
+            transition: stroke 0.2s ease;
+        }
+
+        .edge:hover {
+            stroke: rgba(0, 255, 136, 0.3);
+        }
+
+        .edge.marked {
+            stroke: #00ff88;
+            stroke-width: 7;
+            /* 40% mais grosso que 5px */
+            filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.9));
+        }
+
+        .edge-guide {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 1;
+            pointer-events: none;
+        }
+
+        /* ================================================================
+           ÁREA DA QUADRA - Polígono de fundo
+           ================================================================ */
+        .quadra-poly {
+            fill: transparent;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quadra-poly:hover {
+            fill: rgba(0, 255, 136, 0.04);
+            stroke: rgba(0, 255, 136, 0.3);
+        }
+
+        .quadra-label {
+            fill: rgba(255, 255, 255, 0.95);
+            font-size: 11px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.9);
+        }
+
+        /* ================================================================
+           PAINEL DE STATUS
+           ================================================================ */
+        .status-panel {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 30, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            font-size: 13px;
+            color: #ccc;
+            z-index: 1001;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .status-panel.visible {
+            opacity: 1;
+        }
+
+        .status-panel strong {
+            color: #00ff88;
+        }
+
+        .status-panel .pending-text {
+            color: #ffc800;
+        }
+
+        /* CSS para garantir responsividade e alinhamento correto do Gemini */
+        .territorio-control-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            font-family: sans-serif;
+        }
+
+        .btn-group-territorio {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        /* Estilos dos botões */
+        .btn-green {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-green:hover {
+            background-color: #45a049;
+        }
+
+        .btn-red {
+            background-color: #f76257;
+            color: white;
+        }
+
+        .btn-red:hover {
+            background-color: #de3023;
+        }
+
+        .btn-blue {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background-color: #0b7dda;
+        }
+
+        /* Ajuste para telas pequenas (smartphones) */
+        @media (max-width: 600px) {
+            .territorio-control-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-group-territorio {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .btn-action {
+                flex: 1;
+                text-align: center;
+                padding: 10px 5px;
+                font-size: 12px;
+            }
+        }
+
+        /* FIM  CSS para garantir responsividade e alinhamento correto */
+
+
+        /* ================================================================
+           INSTRUÇÕES
+           ================================================================ */
+        .instructions {
+            position: fixed;
+            top: calc(var(--top-bar-height) + 10px);
+            left: 10px;
+            background: rgba(10, 10, 30, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            font-size: 12px;
+            color: #aaa;
+            max-width: 220px;
+            z-index: 999;
+            line-height: 1.7;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .instructions strong {
+            color: #00ff88;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .instructions .step {
+            margin-bottom: 4px;
+        }
+
+        .instructions .step-num {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* ================================================================
+           MODAL DE FACES
+           ================================================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #151530, #0a0a1a);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+            color: #ff4444;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .faces-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .face-btn {
+            background: linear-gradient(145deg, #1e1e3f, #151530);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .face-btn:hover {
+            border-color: rgba(0, 255, 136, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .face-btn.marked {
+            background: linear-gradient(145deg, #004d2a, #003d1f);
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .face-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.2s;
+        }
+
+        .face-btn.marked .face-indicator {
+            background: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes markFlash {
+            0% {
+                stroke-width: 10;
+                filter: drop-shadow(0 0 25px rgba(0, 255, 136, 1));
+            }
+
+            100% {
+                stroke-width: 7;
+                filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.9));
+            }
+        }
+
+        .edge.marked {
+            animation: markFlash 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --top-bar-height: 108px;
+            }
+
+            .top-bar {
+                padding: 5px 8px;
+                gap: 5px;
+            }
+
+            .top-bar h1 {
+                font-size: 12px;
+            }
+
+            .territory-controls {
+                gap: 5px;
+            }
+
+            .territory-controls label {
+                font-size: 11px;
+            }
+
+            .territory-input {
+                width: 44px;
+                padding: 5px 6px;
+                font-size: 13px;
+            }
+
+            .btn-territory {
+                flex: 1 1 calc(50% - 30px);
+                font-size: 10px;
+                padding: 5px 6px;
+            }
+
+            .btn-territory .btn-short {
+                display: inline;
+                gap: 5px;
+            }
+
+            .btn-territory .btn-full {
+                display: none;
+                gap: 5px;
+            }
+
+            .btn {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+
+            .btn-zoom {
+                font-size: 14px;
+                padding: 5px 8px;
+                min-width: 32px;
+            }
+
+            .instructions {
+                display: none;
+            }
+
+            /* MODAL REDUZIDO PELA METADE NO MOBILE */
+            .modal-content {
+                padding: 10px 12px;
+                max-width: 210px;
+                /* Metade de 420px */
+                border-radius: 10px;
+            }
+
+            .modal-header {
+                margin-bottom: 8px;
+                padding-bottom: 6px;
+            }
+
+            .modal-title {
+                font-size: 13px;
+            }
+
+            .modal-subtitle {
+                font-size: 10px;
+                margin-bottom: 6px;
+            }
+
+            .modal-close {
+                font-size: 20px;
+            }
+
+            .faces-grid {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+
+            .face-btn {
+                padding: 6px 8px;
+                font-size: 10px;
+                border-radius: 6px;
+                gap: 4px;
+            }
+
+            .face-indicator {
+                width: 6px;
+                height: 6px;
+            }
+
+            .vertex {
+                r: 6;
+            }
+
+            .vertex:hover,
+            .vertex.selected,
+            .vertex.pending {
+                r: 8;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .btn-territory .btn-short {
+                display: none;
+            }
+
+            .btn-territory .btn-full {
+                display: inline;
+            }
+        }
+
+    </style>
+    <base target="_blank">
+    <base target="_blank">
+
+</head>
+
+
+<body>
+    <div class="top-bar">
+        <div class="top-bar-header">
+            <h1>🗺️ Controle Territórios v5.0</h1>
+            <div class="controls">
+                <button class="btn btn-zoom" onclick="zoomIn()">🔍+</button>
+                <button class="btn btn-zoom" onclick="zoomOut()">🔍−</button>
+                <button class="btn" onclick="resetView()">📍</button>
+                <button class="btn btn-reset" onclick="resetMarks()">🗑️</button>
+                <button class="btn" onclick="exportData()">💾</button>
+            </div>
+        </div>
+        <div class="territory-controls">
+            <label for="territoryInput">Território:</label>
+            <div class="territory-input-wrapper">
+                <button class="btn-arrow" id="btnDecrement" onclick="changeTerritory(-1)"
+                    title="Território anterior">−</button>
+                <input type="number" id="territoryInput" class="territory-input" min="1" max="16" placeholder="Nº"
+                    inputmode="numeric" aria-label="Número do território" onchange="validateTerritoryInput()"
+                    onkeyup="validateTerritoryInput()">
+                <button class="btn-arrow" id="btnIncrement" onclick="changeTerritory(1)"
+                    title="Próximo território">+</button>
+            </div>
+            <button onclick="mostrarTerritorioNaTela()" class="btn-action btn-blue" title="Focar território na tela">🔍
+                Mostrar</button>
+            <button onclick="markAllTerritoryEdges()" class="btn-action btn-mark-all"
+                title="Marcar todas as arestas do território">✅ Marcar todas arestas</button>
+            <button onclick="unmarkAllTerritoryEdges()" class="btn-action btn-unmark-all"
+                title="Desmarcar todas as arestas do território">❌ Desmarcar</button>
+        </div>
+
+    </div>
+
+    <div class="instructions">
+        <strong>📱 Novo Sistema de Vértices:</strong>
+        <div class="step"><span class="step-num">1.</span> Toque em um <strong>vértice</strong> (ponto branco)</div>
+        <div class="step"><span class="step-num">2.</span> Toque em um <strong>vértice vizinho</strong></div>
+        <div class="step"><span class="step-num">3.</span> A <strong>aresta verde</strong> aparece!</div>
+        <div class="step"><span class="step-num">4.</span> Toque na aresta ou vértice para <strong>desmarcar</strong>
+        </div>
+        <div class="step" style="margin-top:8px;color:#888;font-size:11px;">Arraste com 1 dedo • Pinça para zoom</div>
+    </div>
+
+    <div class="map-container" id="mapContainer">
+        <div class="map-wrapper" id="mapWrapper">
+            <img class="map-image" id="mapImage" src="Map3.png" alt="i" draggable="false">
+            <svg class="overlay-svg" id="overlaySvg" viewBox="0 0 1684 1352" preserveAspectRatio="xMidYMid meet"
+                xmlns="http://www.w3.org/2000/svg">
+                <!-- ====  ou  xmlns="http://www.w3.org/2000/TR/SVG">   == novo site === -->
+            </svg>
+        </div>
+    </div>
+
+    <div class="status-panel" id="statusPanel">
+        <span id="statusText">Toque em um vértice para começar</span>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title" id="modalTitle">Quadra E - Território 9</h2>
+                    <div class="modal-subtitle" id="modalSubtitle">Gerenciamento de faces</div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="faces-grid" id="facesGrid"></div>
+        </div>
+    </div>
+
+
+ <!-- 🔹 2. Substitua a seção <script> do seu código por esta versão comentada
+Vou mostrar apenas as funções que precisam mudar. O resto do seu código (renderização, zoom, modal, etc.) permanece igual.
+HTML    -->
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  CONFIGURAÇÃO DO FIREBASE — COLE AQUI OS DADOS DO SEU PROJETO
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // Quando você criou o app no Firebase (Etapa 3), recebeu um objeto
+        // parecido com este. SUBSTITUA pelos seus valores reais!
+        //
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",  // Chave de acesso
+            authDomain: "mapa3-terr.firebaseapp.com",           // Domínio de autenticação
+            databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",   // ← IMPORTANTE!
+            projectId: "mapa3-terr",                           // ID do projeto
+            storageBucket: "mapa3-terr.firebasestorage.app",    // Armazenamento de arquivos
+            messagingSenderId: "15579279461",                   // Notificações
+            appId: "1:15579279461:web:5ce5d4705353506262968c"   // ID do app
+            };
+
+            // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  INICIALIZAÇÃO DO FIREBASE
+        // ═══════════════════════════════════════════════════════════════════
+        // firebase.initializeApp() é como "ligar o telefone" para falar
+        // com a nuvem. Sem isso, nenhuma operação de banco funciona.
+        
+        firebase.initializeApp(firebaseConfig);
+
+        // Cria uma referência (atalho) para o banco de dados.
+        // É como criar um atalho para uma pasta na nuvem chamada "territorios".
+        const db = firebase.database();
+        const dbRef = db.ref("territorios");
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
+        // ═══════════════════════════════════════════════════════════════════
+        const territoriesData = {
+                1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(55, 255, 255, 0.95)' },
+                2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4D03F' },
+                3: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#D5A6BD' },
+                4: { quadras: ['A', 'B', 'C', 'D', 'E'], color: '#F4B4B4' },
+                5: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#5B9BD5' },
+                6: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#F4D03F' },
+                7: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#5B9BD5' },
+                8: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], color: '#F4B4B4' },
+                9: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], color: '#F4D03F' },
+                10: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#D5D5D5' },
+                11: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#F4D03F' },
+                12: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: '#F4D03F' },
+                13: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' },
+                14: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' },
+                15: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: '#F4B4B4' },
+                16: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' }
+            };
+
+
+        const quadVertices = {
+                // === TERRITÓRIO 1 (Azul piscina, canto superior esquerdo) ===
+                "T1_QA": [[93, 73], [143, 401], [93, 394], [53, 77]],
+                "T1_QB": [[134, 193], [156, 191], [172, 282], [157, 348]],
+                "T1_QC": [[181, 193], [318, 180], [294, 228], [190, 231]],
+                "T1_QD": [[190, 256], [238, 254], [212, 359], [177, 356], [193, 286]],
+                "T1_QE": [[160, 380], [218, 383], [209, 405], [165, 402]],
+                "T1_QF": [[97, 420], [196, 428], [163, 502], [114, 513]],
+                "T1_QG": [[262, 505], [185, 506], [203, 472], [243, 465], [212, 453], [311, 242], [405, 287], [399, 326], [329, 304], [350, 327]],
+
+                // === TERRITÓRIO 2 (Vermelho, esquerda) ===
+                "T2_QA": [[368, 335], [395, 349], [385, 396], [343, 392]],
+                "T2_QB": [[309, 453], [329, 414], [395, 418], [401, 445]],
+                "T2_QC": [[451, 484], [288, 504], [299, 474], [409, 457], [419, 422], [407, 397], [429, 287], [467, 292], [453, 431], [428, 438], [451, 452]],
+                "T2_QD": [[489, 289], [523, 292], [527, 372], [480, 368]],
+                "T2_QE": [[630, 445], [473, 431], [473, 388], [524, 391], [539, 417], [546, 288], [569, 287]],
+                "T2_QF": [[472, 451], [565, 457], [562, 490], [472, 484]],
+                "T2_QG": [[584, 462], [639, 467], [656, 498], [583, 493]],
+
+                // === TERRITÓRIO 3 (Cinza, superior centro) ===
+                "T3_QA": [[601, 320], [588, 284], [650, 272], [729, 313], [703, 346], [655, 319]],
+                "T3_QB": [[690, 359], [658, 386], [626, 377], [608, 339], [651, 330]],
+                "T3_QC": [[716, 358], [745, 330], [809, 349], [806, 394], [760, 392]],
+                "T3_QD": [[647, 406], [803, 413], [803, 446], [741, 455], [662, 446]],
+                "T3_QE": [[828, 397], [834, 349], [892, 357], [892, 403]],
+                "T3_QF": [[951, 363], [950, 455], [827, 446], [827, 417], [911, 426], [916, 360]],
+
+                // === TERRITÓRIO 4 (Rosa Salmão, superior direito) ===
+                "T4_QA": [[992, 401], [1016, 388], [1053, 397], [1080, 453], [1020, 449]],
+                "T4_QB": [[1081, 402], [1150, 407], [1143, 516]],
+                "T4_QC": [[1186, 599], [1159, 551], [1174, 410], [1211, 384]],
+                "T4_QD": [[1137, 559], [1117, 622], [1033, 470], [1090, 476]],
+                "T4_QE": [[1054, 561], [1040, 610], [974, 488], [972, 408]],
+
+                // === TERRITÓRIO 5 (Verde escuro, superior direito) ===
+                "T5_QA": [[1270, 140], [1286, 114], [1308, 203]],
+                "T5_QB": [[1255, 241], [1264, 168], [1318, 262], [1335, 328], [1355, 369], [1337, 388]],
+                "T5_QC": [[1244, 356], [1251, 279], [1325, 407], [1298, 445]],
+                "T5_QD": [[1240, 386], [1282, 465], [1230, 526]],
+                "T5_QE": [[1308, 470], [1360, 396], [1364, 455], [1327, 509]],
+                "T5_QF": [[1250, 554], [1293, 489], [1312, 526], [1270, 592]],
+                "T5_QG": [[1195, 672], [1220, 582], [1248, 623], [1202, 694]],
+
+                // === TERRITÓRIO 6 (Lilaz, centro esquerdo) ===
+                "T6_QA": [[299, 520], [302, 538], [120, 548], [114, 532]],
+                "T6_QB": [[301, 550], [305, 568], [132, 571], [126, 556]],
+                "T6_QC": [[314, 518], [451, 502], [448, 519], [315, 533]],
+                "T6_QD": [[443, 660], [407, 656], [410, 621], [427, 603], [325, 614], [321, 579], [432, 555], [320, 560], [318, 545], [450, 534]],
+                "T6_QE": [[309, 613], [232, 613], [247, 578], [305, 580]],
+                "T6_QF": [[387, 658], [267, 670], [279, 633], [387, 623]],
+
+                // === TERRITÓRIO 7 (Bege, meio esquerdo) ===
+                "T7_QA": [[184, 774], [133, 589], [222, 580], [183, 679], [226, 757]],
+                "T7_QB": [[245, 752], [203, 674], [221, 631], [256, 630], [247, 671], [273, 739]],
+                "T7_QC": [[232, 774], [252, 826], [203, 842], [188, 792]],
+                "T7_QD": [[281, 842], [251, 768], [278, 755], [309, 830]],
+                "T7_QE": [[446, 775], [329, 821], [298, 746], [427, 750]],
+                "T7_QF": [[524, 739], [526, 686], [401, 672], [272, 687], [287, 722]],
+
+                // === TERRITÓRIO 8 (Verde claro, centro meio) ===
+                "T8_QA": [[611, 556], [556, 552], [558, 511], [614, 514]],
+                "T8_QB": [[632, 559], [635, 517], [664, 516], [684, 562]],
+                "T8_QC": [[694, 581], [712, 623], [643, 618], [646, 580]],
+                "T8_QD": [[553, 570], [625, 577], [623, 615], [552, 610]],
+                "T8_QE": [[532, 569], [531, 609], [466, 603], [468, 565]],
+                "T8_QF": [[530, 627], [530, 666], [464, 661], [465, 623]],
+                "T8_QG": [[553, 629], [622, 634], [619, 672], [549, 666]],
+                "T8_QH": [[641, 636], [721, 641], [744, 686], [640, 676]],
+                "T8_QI": [[549, 686], [748, 705], [753, 759], [546, 743]],
+
+                // === TERRITÓRIO 9 (Azul escuro, centro meio) ===
+                "T9_QA": [[706, 550], [681, 497], [701, 498], [722, 542]],
+                "T9_QB": [[674, 477], [665, 462], [731, 473], [757, 523], [739, 532], [712, 485]],
+                "T9_QC": [[740, 619], [713, 564], [727, 555], [761, 601], [748, 549], [765, 539], [793, 598]],
+                "T9_QD": [[749, 638], [799, 615], [803, 688], [770, 686]],
+                "T9_QE": [[822, 675], [819, 604], [854, 584], [859, 657]],
+                "T9_QF": [[878, 643], [876, 573], [915, 551], [947, 608]],
+                "T9_QG": [[933, 540], [965, 522], [998, 578], [967, 594]],
+                "T9_QH": [[876, 546], [874, 514], [957, 500]],
+                "T9_QI": [[818, 579], [818, 527], [852, 525], [854, 557]],
+                "T9_QJ": [[818, 503], [818, 470], [850, 470], [851, 501]],
+                "T9_QK": [[872, 472], [953, 479], [874, 497]],
+
+                // === TERRITÓRIO 10 (Cinza claro, centro) ===
+                "T10_QA": [[781, 795], [776, 705], [803, 708], [806, 794]],
+                "T10_QB": [[825, 740], [823, 699], [856, 684], [856, 719]],
+                "T10_QC": [[879, 671], [955, 629], [973, 657], [881, 708]],
+                "T10_QD": [[975, 616], [1008, 597], [1023, 629], [993, 649]],
+                "T10_QE": [[1001, 666], [1032, 649], [1018, 696]],
+                "T10_QF": [[883, 734], [983, 677], [1006, 717], [885, 781]],
+                "T10_QG": [[825, 801], [824, 767], [860, 747], [862, 811]],
+
+                // === TERRITÓRIO 11 (Azul claro, centro) ===
+                "T11_QA": [[1056, 639], [1070, 588], [1106, 655], [1092, 703]],
+                "T11_QB": [[1151, 582], [1174, 624], [1155, 694], [1134, 652]],
+                "T11_QC": [[1123, 681], [1147, 724], [1131, 777], [1106, 736]],
+                "T11_QD": [[1098, 768], [1122, 810], [1097, 897], [1074, 856]],
+                "T11_QE": [[985, 886], [1045, 675], [1080, 739], [1032, 898]],
+                "T11_QF": [[962, 764], [1007, 740], [972, 846], [941, 836]],
+
+                // === TERRITÓRIO 12 (Lilaz, MEIO DIREITO) ===
+                "T12_QA": [[1279, 612], [1366, 490], [1370, 542], [1299, 643]],
+                "T12_QB": [[1310, 668], [1375, 576], [1384, 619], [1330, 700]],
+                "T12_QC": [[1394, 649], [1414, 694], [1365, 765], [1341, 722]],
+                "T12_QD": [[1379, 786], [1426, 714], [1459, 765], [1405, 833]],
+                "T12_QE": [[1355, 819], [1383, 867], [1332, 941], [1308, 892]],
+                "T12_QF": [[1320, 754], [1342, 799], [1294, 864], [1273, 825]],
+                "T12_QG": [[1241, 768], [1289, 704], [1306, 734], [1260, 800]],
+                "T12_QH": [[1212, 710], [1257, 644], [1275, 679], [1231, 743]],
+
+                // === TERRITÓRIO 13 (Roxo, CANTO INFERIOR ESQUERDO) ===
+                "T13_QA": [[781, 815], [806, 810], [966, 867], [967, 897], [1029, 915], [1022, 938], [865, 885], [855, 851], [850, 993], [828, 1005], [786, 934]],
+                "T13_QB": [[871, 911], [925, 933], [911, 1096], [873, 1004]],
+                "T13_QC": [[948, 939], [992, 954], [970, 1175], [928, 1119]],
+                "T13_QD": [[1015, 960], [1057, 993], [1032, 1269], [984, 1204]],
+                "T13_QE": [[1044, 948], [1051, 924], [1068, 930], [1062, 973]],
+                "T13_QF": [[1083, 935], [1101, 940], [1102, 1021], [1183, 1193], [1145, 1204], [1069, 1076]],
+                "T13_QG": [[1066, 1104], [1123, 1216], [1054, 1235]],
+
+                // === TERRITÓRIO 14 (Marrom, CENTRO INFERIOR) ===
+                "T14_QA": [[1172, 769], [1188, 710], [1241, 811], [1188, 802]],
+                "T14_QB": [[1195, 826], [1251, 833], [1274, 880], [1219, 872]],
+                "T14_QC": [[1230, 895], [1285, 900], [1316, 960], [1278, 999]],
+                "T14_QD": [[1209, 906], [1262, 1020], [1219, 1058], [1175, 963]],
+                "T14_QE": [[1136, 886], [1162, 804], [1198, 879], [1163, 936]],
+                "T14_QF": [[1119, 1012], [1115, 947], [1129, 909], [1150, 962]],
+                "T14_QG": [[1131, 1038], [1164, 987], [1202, 1073], [1165, 1107]],
+
+                // === TERRITÓRIO 15 (Mostarda, INFERIOR DIREITO) ===
+                "T15_QA": [[1447, 907], [1432, 881], [1492, 803], [1490, 846]],
+                "T15_QB": [[1539, 902], [1493, 964], [1459, 926], [1502, 865]],
+                "T15_QC": [[1592, 944], [1539, 1016], [1511, 984], [1557, 916]],
+                "T15_QD": [[1651, 1003], [1587, 1071], [1559, 1038], [1612, 962]],
+                "T15_QE": [[1493, 1133], [1536, 1069], [1562, 1097], [1509, 1149]],
+                "T15_QF": [[1443, 1078], [1487, 1014], [1515, 1049], [1476, 1109]],
+                "T15_QG": [[1439, 959], [1470, 993], [1426, 1057], [1396, 1024]],
+                "T15_QH": [[1347, 962], [1395, 891], [1423, 938], [1378, 998]],
+
+                // === TERRITÓRIO 16 (Bege rosado, INFERIOR DIREITO) ===
+                "T16_QA": [[1176, 1132], [1212, 1099], [1242, 1166], [1202, 1180]],
+                "T16_QB": [[1230, 1080], [1271, 1042], [1315, 1134], [1267, 1152]],
+                "T16_QC": [[1294, 1034], [1371, 1036], [1412, 1080], [1397, 1104], [1338, 1127]],
+                "T16_QD": [[1352, 1147], [1441, 1110], [1462, 1129], [1441, 1147], [1474, 1146], [1489, 1166], [1406, 1201]],
+                "T16_QE": [[1273, 1248], [1277, 1180], [1327, 1159], [1380, 1212]],
+                "T16_QF": [[1155, 1228], [1250, 1186], [1249, 1252], [1174, 1266]],
+                "T16_QG": [[1050, 1252], [1078, 1255], [1133, 1235], [1151, 1272], [1059, 1298], [1046, 1284]]
+            };
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  ESTADO GLOBAL — AGORA COM FLAG DE SINCRONIZAÇÃO
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // Adicionamos 'isSyncing' para evitar um problema: quando o Firebase
+        // manda dados novos, não queremos que o navegador mande de volta,
+        // criando um loop infinito de atualizações!
+        //
+        let appState = {
+            zoom: 1, panX: 0, panY: 0,
+            isDragging: false, dragStartX: 0, dragStartY: 0,
+            marks: {},           // { "edgeId": true } — agora preenchido pela nuvem
+            selectedVertex: null,
+            lastTouchDist: 0,
+            imgWidth: 1890, imgHeight: 2586,
+            isSyncing: false     // ← NOVO: "estou recebendo dados, não mande de volta"
+        };
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  FUNÇÃO INIT — AGORA CONECTA À NUVEM ANTES DE RENDERIZAR
+        // ═══════════════════════════════════════════════════════════════════
+        function init() {
+            // CARREGA O ESTADO LOCAL PRIMEIRO (zoom, pan — coisas pessoais)
+            loadLocalState();
+            
+            // RENDERIZA O MAPA (ainda sem marcações, ou com as do localStorage)
+            renderOverlay();
+            setupInteractions();
+            centerMap();
+
+            // ═══════════════════════════════════════════════════════════════
+            //  NOVO: ESCUTA A NUVEM EM TEMPO REAL
+            // ═══════════════════════════════════════════════════════════════
+            // 
+            // .on('value', ...) é como ligar um "rádio" que fica ouvindo o
+            // Firebase. Sempre que ALGUÉM (A, B, C...) alterar as marcações,
+            // essa função é chamada automaticamente com os dados novos.
+            //
+            dbRef.child("marks").on("value", function(snapshot) {
+                // snapshot é uma "foto" do banco de dados no momento atual
+                const data = snapshot.val(); // Extrai os dados em formato JavaScript
+                
+                if (data) {
+                    // Se houver dados, atualiza nosso estado
+                    appState.isSyncing = true;  // "Estou recebendo, não vou mandar de volta"
+                    appState.marks = data;       // Substitui as marcações locais pelas da nuvem
+                    renderOverlay();             // Redesenha o mapa com as novas marcações
+                    appState.isSyncing = false;  // "Pronto, já posso mandar novamente"
+                }
+            });
+
+            // Verifica se a imagem carregou
+            setTimeout(function () {
+                const img = document.getElementById('mapImage');
+                if (!img.complete || img.naturalWidth === 0) {
+                    handleImageError();
+                }
+            }, 2000);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  SAVE STATE — AGORA SALVA NA NUVEM E NO LOCAL
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // Antes: só gravava no localStorage (só no celular do usuário).
+        // Agora: grava na nuvem (todos veem) E no localStorage (backup pessoal).
+        //
+        function saveState() {
+            // ── SALVA NO LOCALSTORAGE (backup pessoal do zoom/pan) ──
+            try {
+                localStorage.setItem('territoryZoom', appState.zoom);
+                localStorage.setItem('territoryPanX', appState.panX);
+                localStorage.setItem('territoryPanY', appState.panY);
+                // Não salvamos mais 'marks' no localStorage — a nuvem é a fonte da verdade!
+            } catch (e) {
+                console.warn('Erro ao salvar local:', e);
+            }
+
+            // ── SALVA NA NUVEM (Firebase) ──
+            // 
+            // Só envia se NÃO estivermos no meio de uma sincronização.
+            // Isso evita que, ao receber dados do Firebase, mandemos os
+            // mesmos dados de volta, criando um loop infinito.
+            //
+            if (!appState.isSyncing) {
+                dbRef.child("marks").set(appState.marks)
+                    .then(function() {
+                        console.log("✅ Dados salvos na nuvem com sucesso!");
+                    })
+                    .catch(function(error) {
+                        console.error("❌ Erro ao salvar na nuvem:", error);
+                    });
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOAD LOCAL STATE — CARREGA APENAS ZOOM E PAN DO LOCAL
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // As marcações (marks) agora vêm da nuvem, não do localStorage.
+        // Mas o zoom e a posição (pan) são pessoais — cada um pode ver
+        // o mapa de um ângulo diferente no próprio celular.
+        //
+        function loadLocalState() {
+            try {
+                const zoom = localStorage.getItem('territoryZoom');
+                if (zoom) appState.zoom = parseFloat(zoom);
+
+                const panX = localStorage.getItem('territoryPanX');
+                if (panX) appState.panX = parseFloat(panX);
+
+                const panY = localStorage.getItem('territoryPanY');
+                if (panY) appState.panY = parseFloat(panY);
+            } catch (e) {
+                console.warn('Erro ao carregar estado local:', e);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  TOGGLE EDGE — MARCA/DESMARCA ARESTA (AGORA SINCRONIZA)
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // Esta função continua igual na lógica, mas agora chama saveState()
+        // que manda para a nuvem. Quando o dado chega na nuvem, o Firebase
+        // avisa TODOS os outros navegadores conectados automaticamente!
+        //
+        function toggleEdge(edgeId) {
+            if (appState.marks[edgeId]) {
+                delete appState.marks[edgeId];  // Desmarca
+            } else {
+                appState.marks[edgeId] = true;   // Marca
+            }
+
+            saveState();  // ← Agora envia para a nuvem!
+
+            // Feedback visual (mantido igual)
+            const parts = edgeId.split('_');
+            const t = parts[0].replace('T', '');
+            const q = parts[1].replace('Q', '');
+            const e = parts[2];
+            const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
+            showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  MARK ALL / UNMARK ALL — AGORA TAMBÉM SINCRONIZAM
+        // ═══════════════════════════════════════════════════════════════════
+        function markAllTerritoryEdges() {
+            const territoryNum = getTerritoryNumber();
+            if (!territoryNum) return;
+
+            const edgeIds = getTerritoryEdgeIds(territoryNum);
+            edgeIds.forEach(edgeId => {
+                appState.marks[edgeId] = true;
+            });
+
+            appState.selectedVertex = null;
+            saveState();     // ← Envia tudo de uma vez para a nuvem
+            renderOverlay();
+            showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✅`);
+        }
+
+        function unmarkAllTerritoryEdges() {
+            const territoryNum = getTerritoryNumber();
+            if (!territoryNum) return;
+
+            const edgeIds = getTerritoryEdgeIds(territoryNum);
+            let removed = 0;
+            edgeIds.forEach(edgeId => {
+                if (appState.marks[edgeId]) {
+                    delete appState.marks[edgeId];
+                    removed++;
+                }
+            });
+
+            appState.selectedVertex = null;
+            saveState();     // ← Envia tudo de uma vez para a nuvem
+            renderOverlay();
+            showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  RESET MARKS — LIMPA TUDO NA NUVEM
+        // ═══════════════════════════════════════════════════════════════════
+        function resetMarks() {
+            const count = Object.keys(appState.marks).length;
+            if (count === 0) {
+                showStatus('Não há marcações');
+                return;
+            }
+            if (confirm(`Apagar ${count} marcações de TODOS os usuários?`)) {
+                appState.marks = {};
+                appState.selectedVertex = null;
+                saveState();  // ← Limpa na nuvem também!
+                renderOverlay();
+                showStatus('Todas removidas 🗑️');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  EXPORT DATA — AGORA EXPORTA DA NUVEM (OPCIONAL)
+        // ═══════════════════════════════════════════════════════════════════
+        // 
+        // O export continua funcionando igual — ele pega o estado atual
+        // (que já está sincronizado com a nuvem) e baixa como JSON.
+        //
+        function exportData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                version: '4.0-cloud',  // Atualizei a versão para refletir a nuvem
+                marks: appState.marks
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `territorios_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showStatus('Exportado! 💾');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  AS OUTRAS FUNÇÕES PERMANECEM IGUAIS:
+        //  renderOverlay(), handleVertexClick(), handleEdgeClick(),
+        //  handleQuadraClick(), openModal(), toggleEdgeFromModal(),
+        //  closeModal(), showStatus(), zoomIn(), zoomOut(), resetView(),
+        //  centerMap(), applyTransform(), setupInteractions(),
+        //  todas as funções de toque/mouse/teclado,
+        //  mostrarTerritorioNaTela(), changeTerritory(), etc.
+        // ═══════════════════════════════════════════════════════════════════
+        
+        // ... (cole aqui todo o restante do seu código original, sem alterar)
+        
+        // ================================================================
+        // RENDERIZAR OVERLAY COM VÉRTICES E ARESTAS
+        // ================================================================
+        function renderOverlay() {
+            const svg = document.getElementById('overlaySvg');
+            let html = '';
+
+            // Primeiro passo: renderizar todas as quadras (polígonos de fundo)
+            for (let t = 1; t <= 16; t++) {
+                const data = territoriesData[t];
+                data.quadras.forEach(quadra => {
+                    const qId = `T${t}_Q${quadra}`;
+                    const verts = quadVertices[qId];
+                    if (!verts) return;
+
+                    // Polígono da quadra (area de fundo)
+                    const points = verts.map(v => v.join(',')).join(' ');
+                    html += `<polygon class="quadra-poly" points="${points}" 
+                             onclick="handleQuadraClick('${qId}', ${t}, '${quadra}')"/>`;
+
+                    // Label no centro
+                    const cx = verts.reduce((s, v) => s + v[0], 0) / verts.length;
+                    const cy = verts.reduce((s, v) => s + v[1], 0) / verts.length;
+                    html += `<text class="quadra-label" x="${cx}" y="${cy}">${quadra}</text>`;
+                });
+            }
+
+            // Segundo passo: renderizar arestas (faces/lados das quadras)
+            // Cada aresta conecta dois vértices consecutivos
+            for (let t = 1; t <= 16; t++) {
+                const data = territoriesData[t];
+                data.quadras.forEach(quadra => {
+                    const qId = `T${t}_Q${quadra}`;
+                    const verts = quadVertices[qId];
+                    if (!verts) return;
+
+                    // Cria arestas entre vértices consecutivos
+                    for (let i = 0; i < verts.length; i++) {
+                        const j = (i + 1) % verts.length; // Próximo vértice (fecha o polígono)
+                        const v1 = verts[i];
+                        const v2 = verts[j];
+
+                        const edgeId = `${qId}_E${i}`;
+                        const isMarked = appState.marks[edgeId] || false;
+                        const markedClass = isMarked ? 'marked' : '';
+
+                        // Linha guia fina (referência visual)
+                        html += `<line class="edge-guide" x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}"/>`;
+
+                        // Aresta interativa (área grossa para toque)
+                        html += `<line class="edge ${markedClass}" id="${edgeId}"
+                                 x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}"
+                                 onclick="handleEdgeClick(event, '${edgeId}')"/>`;
+                    }
+                });
+            }
+
+            // Terceiro passo: renderizar vértices (pontos clicáveis)
+            // Usamos um Set para evitar vértices duplicados (compartilhados entre quadras)
+            const vertexMap = new Map(); // key: "x,y" -> {id, x, y, edges: []}
+
+            for (let t = 1; t <= 16; t++) {
+                const data = territoriesData[t];
+                data.quadras.forEach(quadra => {
+                    const qId = `T${t}_Q${quadra}`;
+                    const verts = quadVertices[qId];
+                    if (!verts) return;
+
+                    for (let i = 0; i < verts.length; i++) {
+                        const v = verts[i];
+                        const key = `${v[0]},${v[1]}`;
+                        const edgeId = `${qId}_E${i}`;
+                        const prevEdgeId = `${qId}_E${(i - 1 + verts.length) % verts.length}`;
+
+                        if (!vertexMap.has(key)) {
+                            vertexMap.set(key, {
+                                id: `V_${key.replace(',', '_')}`,
+                                x: v[0], y: v[1],
+                                edges: [edgeId, prevEdgeId]
+                            });
+                        } else {
+                            // Adiciona arestas do vértice existente
+                            const existing = vertexMap.get(key);
+                            if (!existing.edges.includes(edgeId)) existing.edges.push(edgeId);
+                            if (!existing.edges.includes(prevEdgeId)) existing.edges.push(prevEdgeId);
+                        }
+                    }
+                });
+            }
+
+            // Renderiza todos os vértices únicos
+            vertexMap.forEach(v => {
+                const edgesAttr = v.edges.join(',');
+                const selectedClass = (appState.selectedVertex === v.id) ? 'selected' : '';
+                html += `<circle class="vertex ${selectedClass}" id="${v.id}"
+                         cx="${v.x}" cy="${v.y}" r="7"
+                         data-edges="${edgesAttr}"
+                         onclick="handleVertexClick(event, '${v.id}', '${edgesAttr}')"/>`;
+            });
+
+            svg.innerHTML = html;
+        }
+
+        // ================================================================
+        // CLIQUE EM VÉRTICE - Lógica principal do sistema
+        // ================================================================
+        function handleVertexClick(event, vertexId, edgesAttr) {
+            event.stopPropagation();
+
+            const edges = edgesAttr.split(',');
+
+            // Se já tem um vértice selecionado
+            if (appState.selectedVertex) {
+                const prevVertex = appState.selectedVertex;
+
+                // Se clicou no mesmo vértice, desseleciona
+                if (prevVertex === vertexId) {
+                    appState.selectedVertex = null;
+                    renderOverlay();
+                    showStatus('Seleção cancelada');
+                    return;
+                }
+
+                // Verifica se os dois vértices compartilham uma aresta (são vizinhos)
+                const prevEdges = document.getElementById(prevVertex).getAttribute('data-edges').split(',');
+                const commonEdge = edges.find(e => prevEdges.includes(e));
+
+                if (commonEdge) {
+                    // São vizinhos! Marca/desmarca a aresta
+                    toggleEdge(commonEdge);
+                    appState.selectedVertex = null;
+                    renderOverlay();
+                } else {
+                    // Não são vizinhos, seleciona o novo vértice
+                    appState.selectedVertex = vertexId;
+                    renderOverlay();
+                    showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong> (conectado por linha)');
+                }
+            } else {
+                // Primeiro vértice selecionado
+                appState.selectedVertex = vertexId;
+                renderOverlay();
+                showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong> para marcar a aresta');
+            }
+        }
+
+        // ================================================================
+        // ALTERNAR ARESTA (MARCA/DESMARCA)
+        // ================================================================
+        function toggleEdge(edgeId) {
+            if (appState.marks[edgeId]) {
+                delete appState.marks[edgeId];
+            } else {
+                appState.marks[edgeId] = true;
+            }
+
+            saveState();
+
+            // Extrai informações para feedback
+            const parts = edgeId.split('_');
+            const t = parts[0].replace('T', '');
+            const q = parts[1].replace('Q', '');
+            const e = parts[2];
+            const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
+
+            showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
+        }
+
+        // ================================================================
+        // CLIQUE DIRETO NA ARESTA
+        // ================================================================
+        function handleEdgeClick(event, edgeId) {
+            event.stopPropagation();
+            toggleEdge(edgeId);
+            appState.selectedVertex = null;
+            renderOverlay();
+        }
+
+        // ================================================================
+        // CLIQUE NA QUADRA (ABRE MODAL)
+        // ================================================================
+        function handleQuadraClick(qId, tId, quadra) {
+            const verts = quadVertices[qId];
+            const numEdges = verts ? verts.length : 4;
+            openModal(qId, tId, quadra, numEdges);
+        }
+
+        // ================================================================
+        // MODAL DE GERENCIAMENTO
+        // ================================================================
+        function openModal(qId, tId, quadra, numEdges) {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const subtitle = document.getElementById('modalSubtitle');
+            const grid = document.getElementById('facesGrid');
+
+            title.textContent = `Quadra ${quadra} - Território ${tId}`;
+            subtitle.textContent = `Toque para marcar/desmarcar as ${numEdges} faces`;
+
+            grid.innerHTML = '';
+
+            const edgeNames = ['Topo', 'Lateral Direita', 'Base', 'Lateral Esquerda'];
+            if (numEdges === 5) edgeNames.push('Divisão');
+
+            for (let i = 0; i < numEdges; i++) {
+                const edgeId = `${qId}_E${i}`;
+                const isMarked = appState.marks[edgeId] || false;
+                const btnClass = isMarked ? 'face-btn marked' : 'face-btn';
+
+                const btn = document.createElement('button');
+                btn.className = btnClass;
+                btn.innerHTML = `
+                    <span class="face-indicator"></span>
+                    <span>Face ${i + 1}: ${edgeNames[i] || 'Face ' + (i + 1)}</span>
+                `;
+                btn.onclick = () => toggleEdgeFromModal(edgeId, btn);
+                grid.appendChild(btn);
+            }
+
+            modal.classList.add('active');
+        }
+
+        function toggleEdgeFromModal(edgeId, btnElement) {
+            if (appState.marks[edgeId]) {
+                delete appState.marks[edgeId];
+                btnElement.classList.remove('marked');
+            } else {
+                appState.marks[edgeId] = true;
+                btnElement.classList.add('marked');
+            }
+
+            renderOverlay();
+            saveState();
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ================================================================
+        // FEEDBACK VISUAL
+        // ================================================================
+        let statusTimeout;
+        function showStatus(text) {
+            const panel = document.getElementById('statusPanel');
+            const textEl = document.getElementById('statusText');
+            textEl.innerHTML = text;
+            panel.classList.add('visible');
+
+            clearTimeout(statusTimeout);
+            statusTimeout = setTimeout(() => {
+                panel.classList.remove('visible');
+            }, 4000);
+        }
+
+        // ================================================================
+        // CONTROLES DE ZOOM E PAN
+        // ================================================================
+        function zoomIn() {
+            appState.zoom = Math.min(appState.zoom * 1.25, 15);
+            applyTransform();
+        }
+
+        function zoomOut() {
+            appState.zoom = Math.max(appState.zoom / 1.25, 0.2);
+            applyTransform();
+        }
+
+        function resetView() {
+            centerMap();
+        }
+
+        function centerMap() {
+            const container = document.getElementById('mapContainer');
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+
+            const scaleX = cw / appState.imgWidth;
+            const scaleY = ch / appState.imgHeight;
+            let baseZoom = Math.min(scaleX, scaleY) * 0.95;
+
+            // Detecta se é dispositivo móvel (touch)
+            const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+            if (isMobile) {
+                // Zoom inicial 3x maior no mobile
+                appState.zoom = baseZoom * 3;
+            } else {
+                appState.zoom = baseZoom;
+            }
+
+            appState.panX = 0;
+            appState.panY = 0;
+
+            applyTransform();
+        }
+
+        function applyTransform() {
+            const wrapper = document.getElementById('mapWrapper');
+            wrapper.style.transform =
+                `translate(-50%, -50%) translate(${appState.panX}px, ${appState.panY}px) scale(${appState.zoom})`;
+        }
+
+        // ================================================================
+        // INTERAÇÕES (TOQUE E MOUSE)
+        // ================================================================
+        function setupInteractions() {
+            const container = document.getElementById('mapContainer');
+
+            container.addEventListener('mousedown', handleMouseDown);
+            container.addEventListener('mousemove', handleMouseMove);
+            container.addEventListener('mouseup', handleMouseUp);
+            container.addEventListener('mouseleave', handleMouseUp);
+
+            container.addEventListener('touchstart', handleTouchStart, { passive: false });
+            container.addEventListener('touchmove', handleTouchMove, { passive: false });
+            container.addEventListener('touchend', handleTouchEnd);
+
+            container.addEventListener('wheel', handleWheel, { passive: false });
+
+            document.addEventListener('keydown', handleKeyDown);
+        }
+
+        function handleMouseDown(e) {
+            if (e.target.closest('.vertex') || e.target.closest('.edge') || e.target.closest('.quadra-poly')) return;
+
+            appState.isDragging = true;
+            appState.dragStartX = e.clientX - appState.panX;
+            appState.dragStartY = e.clientY - appState.panY;
+            container.style.cursor = 'grabbing';
+        }
+
+        function handleMouseMove(e) {
+            if (!appState.isDragging) return;
+            e.preventDefault();
+            appState.panX = e.clientX - appState.dragStartX;
+            appState.panY = e.clientY - appState.dragStartY;
+            applyTransform();
+        }
+
+        function handleMouseUp() {
+            appState.isDragging = false;
+            container.style.cursor = 'grab';
+        }
+
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                appState.isDragging = true;
+                appState.dragStartX = touch.clientX - appState.panX;
+                appState.dragStartY = touch.clientY - appState.panY;
+            } else if (e.touches.length === 2) {
+                appState.isDragging = false;
+                appState.lastTouchDist = getTouchDistance(e.touches);
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+
+            if (e.touches.length === 1 && appState.isDragging) {
+                const touch = e.touches[0];
+                appState.panX = touch.clientX - appState.dragStartX;
+                appState.panY = touch.clientY - appState.dragStartY;
+                applyTransform();
+            } else if (e.touches.length === 2) {
+                const dist = getTouchDistance(e.touches);
+                if (appState.lastTouchDist > 0) {
+                    const scale = dist / appState.lastTouchDist;
+                    appState.zoom = Math.max(0.2, Math.min(15, appState.zoom * scale));
+                    applyTransform();
+                }
+                appState.lastTouchDist = dist;
+            }
+        }
+
+        function handleTouchEnd() {
+            appState.isDragging = false;
+            appState.lastTouchDist = 0;
+        }
+
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.85 : 1.15;
+            appState.zoom = Math.max(0.2, Math.min(6, appState.zoom * delta));
+            applyTransform();
+        }
+
+        function handleKeyDown(e) {
+            switch (e.key) {
+                case '+': case '=': zoomIn(); break;
+                case '-': case '_': zoomOut(); break;
+                case '0': centerMap(); break;
+                case 'Escape': closeModal(); break;
+            }
+        }
+        /* -------------------------------------------------
+        CALIBRAÇÕES (colado aqui, vindo do JSON exportado)
+         ------------------------------------------------- */
+        const calibrations = {
+            "1": { "zoom": 0.85, "panX": 328, "panY": 268 },
+            "2": { "zoom": 0.83, "panX": 285, "panY": 324 },
+            "3": { "zoom": 0.83, "panX": 68, "panY": 343 },
+            "4": { "zoom": 0.83, "panX": 140, "panY": 239 },
+            "5": { "zoom": 1.10, "panX": -110, "panY": -53 },
+            "6": { "zoom": 1.10, "panX": -67, "panY": -150 },
+            "7": { "zoom": 0.80, "panX": 382, "panY": -42 },
+            "8": { "zoom": 0.80, "panX": 212, "panY": -23 },
+            "9": { "zoom": 0.80, "panX": 43, "panY": -3 },
+            "10": { "zoom": 1.0, "panX": -66, "panY": -32 },
+            "11": { "zoom": 1.0, "panX": -174, "panY": 93 },
+            "12": { "zoom": 1.0, "panX": -412, "panY": -120 },
+            "13": { "zoom": 1.0, "panX": -126, "panY": -369 },
+            "14": { "zoom": 1.0, "panX": -318, "panY": -302 },
+            "15": { "zoom": 1.0, "panX": -569, "panY": -340 },
+            "16": { "zoom": 1.0, "panX": -402, "panY": -436 }
+        };
+
+        
+        // lógica correta para a função  territorios pre-gravados
+        function mostrarTerritorioNaTela() {
+            // NÃO lemos do localStorage; usamos o objeto que já está no código:
+            const num = parseInt(territoryInput.value, 10);   // número digitado pelo usuário
+            if (isNaN(num) || num < 1 || num > 16) {
+                alert('Digite um número de território válido (1‑16).');
+                return;
+            }
+
+            // Busca a calibração correspondente (se existir)
+            const cfg = calibrations[num];   // "num" vem como string, por isso usamos [] e não dot‑notation
+            if (!cfg) {
+                // Caso ainda não tenha calibração (por exemplo, você ainda não gravou)
+                // pode usar a lógica original que já existia no seu código:
+                // (coloque aqui a sua função que calcula min/max, escala, etc.)
+                // Por simplicidade, vamos apenas chamar a função que já calcula:
+                calcularPosicaoAutomatica(num);
+            } else {
+                // Aplicamos a calibração já gravada
+                appState.zoom = cfg.zoom;
+                appState.panX = cfg.panX;
+                appState.panY = cfg.panY;
+            }
+            applyTransform();
+        }
+
+        /**
+             * Altera o valor do input de território (incrementa ou decrementa)
+             * @param {number} delta - +1 para próximo, -1 para anterior
+             */
+        function changeTerritory(delta) {
+            const input = document.getElementById('territoryInput');
+            let value = parseInt(input.value, 10) || 0;
+            value += delta;
+
+            // Limita entre 1 e 16
+            if (value < 1) value = 1;
+            if (value > 16) value = 16;
+
+            input.value = value;
+            updateArrowButtons(value);
+        }
+
+        /**
+         * Valida o input manual e atualiza estado dos botões
+         */
+        function validateTerritoryInput() {
+            const input = document.getElementById('territoryInput');
+            let value = parseInt(input.value, 10);
+
+            // Se não for número válido, não faz nada (mantém vazio)
+            if (isNaN(value)) {
+                updateArrowButtons(null);
+                return;
+            }
+
+            // Corrige se estiver fora do range
+            if (value < 1) {
+                value = 1;
+                input.value = 1;
+            }
+
+            if (value > 16) {
+                value = 16;
+                input.value = 16;
+            }
+
+            updateArrowButtons(value);
+        }
+
+        /**
+        * Atualiza estado (habilitado/desabilitado) dos botões de seta
+        * @param {number|null} currentValue - valor atual do input
+        */
+        function updateArrowButtons(currentValue) {
+            const btnDec = document.getElementById('btnDecrement');
+            const btnInc = document.getElementById('btnIncrement');
+
+            if (!btnDec || !btnInc) return;
+
+            // Desabilita "−" se estiver no 1 (ou vazio)
+            btnDec.disabled = (!currentValue || currentValue <= 1);
+
+            // Desabilita "+" se estiver no 16
+            btnInc.disabled = (currentValue >= 16);
+        }
+
+        // Inicializa estado dos botões ao carregar
+        document.addEventListener('DOMContentLoaded', function () {
+            updateArrowButtons(null);
+        });
+
+        // ================================================================
+        // MARCAR / DESMARCAR TODAS AS ARESTAS DE UM TERRITÓRIO   TRECHO 2 ENVIADO
+        // ================================================================
+        function getTerritoryNumber() {
+            const input = document.getElementById('territoryInput');
+            const value = parseInt(input.value, 10);
+            if (!value || !territoriesData[value]) {
+                showStatus('Digite um <strong>número de território válido</strong> (1 a 16)');
+                input.focus();
+                return null;
+            }
+            return value;
+        }
+
+        function getTerritoryEdgeIds(territoryNum) {
+            const edgeIds = [];
+            const data = territoriesData[territoryNum];
+            data.quadras.forEach(quadra => {
+                const qId = `T${territoryNum}_Q${quadra}`;
+                const verts = quadVertices[qId];
+                if (!verts) return;
+                for (let i = 0; i < verts.length; i++) {
+                    edgeIds.push(`${qId}_E${i}`);
+                }
+            });
+            return edgeIds;
+        }
+
+        function markAllTerritoryEdges() {
+            const territoryNum = getTerritoryNumber();
+            if (!territoryNum) return;
+
+            const edgeIds = getTerritoryEdgeIds(territoryNum);
+            edgeIds.forEach(edgeId => {
+                appState.marks[edgeId] = true;
+            });
+
+            appState.selectedVertex = null;
+            saveState();
+            renderOverlay();
+            showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✅`);
+        }
+
+        function unmarkAllTerritoryEdges() {
+            const territoryNum = getTerritoryNumber();
+            if (!territoryNum) return;
+
+            const edgeIds = getTerritoryEdgeIds(territoryNum);
+            let removed = 0;
+            edgeIds.forEach(edgeId => {
+                if (appState.marks[edgeId]) {
+                    delete appState.marks[edgeId];
+                    removed++;
+                }
+            });
+
+            appState.selectedVertex = null;
+            saveState();
+            renderOverlay();
+            showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
+        }
+
+        // ================================================================
+        // RESETAR E EXPORTAR
+        // ================================================================
+        function resetMarks() {
+            const count = Object.keys(appState.marks).length;
+            if (count === 0) {
+                showStatus('Não há marcações');
+                return;
+            }
+            if (confirm(`Apagar ${count} marcações?`)) {
+                appState.marks = {};
+                appState.selectedVertex = null;
+                saveState();
+                renderOverlay();
+                showStatus('Todas removidas 🗑️');
+            }
+        }
+
+        function exportData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                version: '3.0-vertex',
+                marks: appState.marks
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `territorios_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showStatus('Exportado! 💾');
+        }
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  INICIALIZAR
+        // ═══════════════════════════════════════════════════════════════════
+        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('resize', () => setTimeout(centerMap, 100));
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html>
