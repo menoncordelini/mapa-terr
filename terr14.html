@@ -1,55 +1,15 @@
 
 <!DOCTYPE html>
 <html lang="pt-BR">
-
-<!--
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",
-    authDomain: "mapa3-terr.firebaseapp.com",
-    databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",
-    projectId: "mapa3-terr",
-    storageBucket: "mapa3-terr.firebasestorage.app",
-    messagingSenderId: "15579279461",
-    appId: "1:15579279461:web:5ce5d4705353506262968c"
-  };  -->
-
-  <!--
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
-    -->
-
-<head>
+head>
+    <!-- Meta tags básicas (sempre no topo) -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🗺️ Sistema de Controle de Territórios v7.0 - Vértices</title>
-
-    <!-- ... seu CSS e meta tags existentes ... -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗺️ Sistema de Controle de Territórios v7.1 - </title>
     
-    <!-- 
-    ╔══════════════════════════════════════════════════════════════════════╗
-    ║  SDK DO FIREBASE — BIBLIOTECA QUE CONECTA SEU SITE À NUVEM           ║
-    ║  Esses 3 scripts carregam as ferramentas do Firebase no navegador    ║
-    ╚══════════════════════════════════════════════════════════════════════╝
-    -->
-    
-    <!-- Script principal do Firebase (núcleo) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    
-    <!-- Script do banco de dados em tempo real -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-    
-    <!-- SEU CSS EXISTENTE ... -->
+    <!-- 1.1 SEU CSS EXISTENTE dentro deste style   -->
     <style>
-        /* ... mantenha todo o seu CSS aqui ... */
-               * {
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -783,18 +743,36 @@
                 display: inline;
             }
         }
-
     </style>
     <base target="_blank">
     <base target="_blank">
 
+    
+    <!-- ========================================== -->
+    <!-- 1.2 SCRIPTS DO FIREBASE (ANTES do seu JS)  -->
+    <!-- Estes scripts carregam a biblioteca do Firebase -->
+    <!-- IMPORTANTE: Devem vir ANTES do seu código JavaScript -->
+    
+    <!-- Núcleo do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    
+    <!-- Banco de dados em tempo real -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    
+    <!-- (Opcional) Autenticação, se precisar depois -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script> -->
+    
 </head>
 
-
+<!-- ========================================== -->
+<!-- 2. CORPO DO DOCUMENTO (<body>)             -->
 <body>
+    <!-- ========================================== -->
+    <!-- 2.1 TODOS OS SEUS <div>s EXISTENTES        -->
+    <!-- Mantenha EXATAMENTE como estava no seu arquivo original todos os div s -->
     <div class="top-bar">
         <div class="top-bar-header">
-            <h1>🗺️ Controle Territórios v5.0</h1>
+            <h1>🗺️ Controle Territórios v7.1</h1>
             <div class="controls">
                 <button class="btn btn-zoom" onclick="zoomIn()">🔍+</button>
                 <button class="btn btn-zoom" onclick="zoomOut()">🔍−</button>
@@ -821,22 +799,11 @@
             <button onclick="unmarkAllTerritoryEdges()" class="btn-action btn-unmark-all"
                 title="Desmarcar todas as arestas do território">❌ Desmarcar</button>
         </div>
-
-    </div>
-
-    <div class="instructions">
-        <strong>📱 Novo Sistema de Vértices:</strong>
-        <div class="step"><span class="step-num">1.</span> Toque em um <strong>vértice</strong> (ponto branco)</div>
-        <div class="step"><span class="step-num">2.</span> Toque em um <strong>vértice vizinho</strong></div>
-        <div class="step"><span class="step-num">3.</span> A <strong>aresta verde</strong> aparece!</div>
-        <div class="step"><span class="step-num">4.</span> Toque na aresta ou vértice para <strong>desmarcar</strong>
-        </div>
-        <div class="step" style="margin-top:8px;color:#888;font-size:11px;">Arraste com 1 dedo • Pinça para zoom</div>
     </div>
 
     <div class="map-container" id="mapContainer">
         <div class="map-wrapper" id="mapWrapper">
-            <img class="map-image" id="mapImage" src="Map3.png" alt="i" draggable="false">
+            <img class="map-image" id="mapImage" src="Map3.png" alt="mapa" draggable="false">
             <svg class="overlay-svg" id="overlaySvg" viewBox="0 0 1684 1352" preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg">
                 <!-- ====  ou  xmlns="http://www.w3.org/2000/TR/SVG">   == novo site === -->
@@ -861,24 +828,26 @@
         </div>
     </div>
 
+<!-- ====    
+    <div id="map-container">
+        <img src="Map3.png" alt="Mapa" id="mapa-imagem">
+         Seus outros divs auxiliares
+        <div id="info-panel">...</div>
+        <div id="legend">...</div>
+         etc.
+    </div>          -->
 
- <!-- 🔹 2. Substitua a seção <script> do seu código por esta versão comentada
-Vou mostrar apenas as funções que precisam mudar. O resto do seu código (renderização, zoom, modal, etc.) permanece igual.
-HTML    -->
-
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-
-        // ═══════════════════════════════════════════════════════════════════
-        //  CONFIGURAÇÃO DO FIREBASE — COLE AQUI OS DADOS DO SEU PROJETO
-        // ═══════════════════════════════════════════════════════════════════
-        // 
-        // Quando você criou o app no Firebase (Etapa 3), recebeu um objeto
-        // parecido com este. SUBSTITUA pelos seus valores reais!
-        //
+    <!-- ========================================== -->
+    <!-- 2.2 INICIALIZAÇÃO DO FIREBASE              -->
+    <!-- ESTE É O PASSO QUE FALTAVA!
+         Aqui você "liga" o Firebase com as credenciais do seu projeto   -->
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO SEU PROJETO FIREBASE
+        // ==========================================
+        // SUBSTITUA estes valores pelos SEUS do Firebase Console!
+        // Para pegar: Firebase Console → Configurações do Projeto (engrenagem) 
+        // → Geral → Seus apps → Código da configuração do SDK
         const firebaseConfig = {
             apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",  // Chave de acesso
             authDomain: "mapa3-terr.firebaseapp.com",           // Domínio de autenticação
@@ -889,25 +858,31 @@ HTML    -->
             appId: "1:15579279461:web:5ce5d4705353506262968c"   // ID do app
             };
 
-            // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
 
-
-        // ═══════════════════════════════════════════════════════════════════
-        //  INICIALIZAÇÃO DO FIREBASE
-        // ═══════════════════════════════════════════════════════════════════
-        // firebase.initializeApp() é como "ligar o telefone" para falar
-        // com a nuvem. Sem isso, nenhuma operação de banco funciona.
-        
+        // ==========================================
+        // INICIALIZAÇÃO DO FIREBASE
+        // ==========================================
+        // Este comando "liga" o Firebase com sua configuração
         firebase.initializeApp(firebaseConfig);
+        
+        // Cria uma referência ao banco de dados
+        const database = firebase.database();
+        //const dbRef = db.ref("territorios");
+        
+        // (Opcional) Mensagem no console para confirmar que funcionou
+        console.log("✅ Firebase inicializado com sucesso!");
+    </script>
 
-        // Cria uma referência (atalho) para o banco de dados.
-        // É como criar um atalho para uma pasta na nuvem chamada "territorios".
-        const db = firebase.database();
-        const dbRef = db.ref("territorios");
-
-        // ═══════════════════════════════════════════════════════════════════
-        //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
+    <!-- ========================================== -->
+    <!-- 2.3 SEU JAVASCRIPT EXISTENTE               -->
+    <!-- AQUI fica TODO o seu código JavaScript original
+         que faz o mapa funcionar (cliques, tooltips, etc.)
+         IMPORTANTE: Este script DEVE vir DEPOIS da inicialização do Firebase
+    -->
+    <script>
+        // ==========================================
+        // SEU CÓDIGO JAVASCRIPT EXISTENTE
+           //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
         // ═══════════════════════════════════════════════════════════════════
         const territoriesData = {
                 1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(55, 255, 255, 0.95)' },
@@ -1622,7 +1597,7 @@ HTML    -->
         }
 
         // ================================================================
-        // INTERAÇÕES (TOQUE E MOUSE)
+        // INTERAÇÕES (TOQUE E MOUSE)  =  event listeners
         // ================================================================
         function setupInteractions() {
             const container = document.getElementById('mapContainer');
@@ -1933,13 +1908,48 @@ HTML    -->
             showStatus('Exportado! 💾');
         }
 
+        /**
+        // Exemplo: função que você já tinha
+        function mostrarInfo(territorio) {
+            // Seu código existente...
+            document.getElementById('info-panel').innerHTML = territorio;
+        }
+        
+        // Exemplo: como usar o Firebase para salvar dados
+        function salvarDados(territorio, dados) {
+            // Esta é a forma de usar o Firebase (compat)
+            database.ref('territorios/' + territorio).set(dados)
+                .then(() => {
+                    console.log("Dados salvos com sucesso!");
+                })
+                .catch((erro) => {
+                    console.error("Erro ao salvar:", erro);
+                });
+        }
+        
+        // Exemplo: como ler dados do Firebase
+        function lerDados(territorio) {
+            database.ref('territorios/' + territorio).on('value', (snapshot) => {
+                const dados = snapshot.val();
+                console.log("Dados lidos:", dados);
+                // Atualize sua interface aqui
+            });
+        }
+        */
 
+        /** Seus event listeners existentes...
+        document.getElementById('mapa-imagem').addEventListener('click', function(e) {
+            // Seu código de clique no mapa...
+        });
+        
+        // ... todo o resto do seu JavaScript ...   */
         // ═══════════════════════════════════════════════════════════════════
         //  INICIALIZAR
         // ═══════════════════════════════════════════════════════════════════
         window.addEventListener('DOMContentLoaded', init);
         window.addEventListener('resize', () => setTimeout(centerMap, 100));
         document.addEventListener('contextmenu', e => e.preventDefault());
+        
     </script>
 </body>
 </html>
