@@ -861,7 +861,7 @@
         
         // Cria uma referência ao banco de dados
         const database = firebase.database();
-        const dbRef = db.ref("territorios");
+        const databaseRef = database.ref("territorios");
         
         // (Opcional) Mensagem no console para confirmar que funcionou
         console.log("✅ Firebase inicializado com sucesso!");
@@ -1074,7 +1074,7 @@
             // Firebase. Sempre que ALGUÉM (A, B, C...) alterar as marcações,
             // essa função é chamada automaticamente com os dados novos.
             //
-            dbRef.child("marks").on("value", function(snapshot) {
+            databaseRef.child("marks").on("value", function(snapshot) {
                 // snapshot é uma "foto" do banco de dados no momento atual
                 const data = snapshot.val(); // Extrai os dados em formato JavaScript
                 
@@ -1117,7 +1117,7 @@
             // mesmos dados de volta, criando um loop infinito.
             //
             if (!appState.isSyncing) {
-                dbRef.child("marks").set(appState.marks)
+                databaseRef.child("marks").set(appState.marks)
                     .then(function() {
                         console.log("✅ Dados salvos na nuvem com sucesso!");
                     })
