@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -305,7 +304,7 @@
 
         .quadra-label {
             fill: rgba(255, 255, 255, 0.95);
-            font-size: 11px;
+            font-size: 1px;
             font-weight: bold;
             text-anchor: middle;
             dominant-baseline: middle;
@@ -764,11 +763,9 @@
     
 </head>
 
-<!-- ========================================== -->
-<!-- 2. CORPO DO DOCUMENTO (<body>)             -->
+<!-- === 2. CORPO DO DOCUMENTO (<body>) ==========    -->
 <body>
-    <!-- ========================================== -->
-    <!-- 2.1 TODOS OS SEUS <div>s EXISTENTES        -->
+    <!-- === 2.1 TODOS OS <div>s EXISTENTES AQUI   -->
     <!-- Mantenha EXATAMENTE como estava no seu arquivo original todos os div s -->
     <div class="top-bar">
         <div class="top-bar-header">
@@ -842,11 +839,8 @@
     <!-- ESTE É O PASSO QUE FALTAVA!
          Aqui você "liga" o Firebase com as credenciais do seu projeto   -->
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO DO SEU PROJETO FIREBASE
-        // ==========================================
-        // SUBSTITUA estes valores pelos SEUS do Firebase Console!
-        // Para pegar: Firebase Console → Configurações do Projeto (engrenagem) 
+        //-- =========  CONFIGURAÇÃO DO SEU PROJETO FIREBASE   ======
+        // Para pegar os dados: Firebase Console → Configurações do Projeto (engrenagem) 
         // → Geral → Seus apps → Código da configuração do SDK
         const firebaseConfig = {
             apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",  // Chave de acesso
@@ -873,17 +867,13 @@
         console.log("✅ Firebase inicializado com sucesso!");
     </script>
 
-    <!-- ========================================== -->
-    <!-- 2.3 SEU JAVASCRIPT EXISTENTE               -->
+    <!-- ====== 2.3 SEU JAVASCRIPT EXISTENTE =======      -->
     <!-- AQUI fica TODO o seu código JavaScript original
          que faz o mapa funcionar (cliques, tooltips, etc.)
-         IMPORTANTE: Este script DEVE vir DEPOIS da inicialização do Firebase
-    -->
+         IMPORTANTE: Este script DEVE vir DEPOIS da inicialização do Firebase -->
     <script>
-        // ==========================================
-        // SEU CÓDIGO JAVASCRIPT EXISTENTE
-           //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
-        // ═══════════════════════════════════════════════════════════════════
+        // ======  AQUI O CÓDIGO JAVASCRIPT EXISTENTE
+        //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
         const territoriesData = {
                 1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(55, 255, 255, 0.95)' },
                 2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4D03F' },
@@ -948,8 +938,8 @@
                 "T5_QG": [[1195, 672], [1220, 582], [1248, 623], [1202, 694]],
 
                 // === TERRITÓRIO 6 (Lilaz, centro esquerdo) ===
-                "T6_QA": [[299, 520], [302, 538], [120, 548], [114, 532]],
-                "T6_QB": [[301, 550], [305, 568], [132, 571], [126, 556]],
+                "T6_QA": [[114, 532], [166, 521], [299, 520], [302, 538], [170, 539], [116, 551]],
+                "T6_QB": [[122, 562], [172, 551], [301, 550], [303, 568], [183, 567], [126, 579]],
                 "T6_QC": [[314, 518], [451, 502], [448, 519], [315, 533]],
                 "T6_QD": [[443, 660], [407, 656], [410, 621], [427, 603], [325, 614], [321, 579], [432, 555], [320, 560], [318, 545], [450, 534]],
                 "T6_QE": [[309, 613], [232, 613], [247, 578], [305, 580]],
@@ -1053,14 +1043,10 @@
             };
 
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  ESTADO GLOBAL — AGORA COM FLAG DE SINCRONIZAÇÃO
-        // ═══════════════════════════════════════════════════════════════════
-        // 
+        // ═════════  ESTADO GLOBAL — AGORA COM FLAG DE SINCRONIZAÇÃO   ══════════
         // Adicionamos 'isSyncing' para evitar um problema: quando o Firebase
         // manda dados novos, não queremos que o navegador mande de volta,
         // criando um loop infinito de atualizações!
-        //
         let appState = {
             zoom: 1, panX: 0, panY: 0,
             isDragging: false, dragStartX: 0, dragStartY: 0,
@@ -1083,10 +1069,7 @@
             setupInteractions();
             centerMap();
 
-            // ═══════════════════════════════════════════════════════════════
-            //  NOVO: ESCUTA A NUVEM EM TEMPO REAL
-            // ═══════════════════════════════════════════════════════════════
-            // 
+            // ═══════ NOVO: ESCUTA A NUVEM EM TEMPO REAL  ════════════
             // .on('value', ...) é como ligar um "rádio" que fica ouvindo o
             // Firebase. Sempre que ALGUÉM (A, B, C...) alterar as marcações,
             // essa função é chamada automaticamente com os dados novos.
@@ -1113,13 +1096,9 @@
             }, 2000);
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  SAVE STATE — AGORA SALVA NA NUVEM E NO LOCAL
-        // ═══════════════════════════════════════════════════════════════════
-        // 
+        // ═══════  SAVE STATE — AGORA SALVA NA NUVEM E NO LOCAL ══════════════
         // Antes: só gravava no localStorage (só no celular do usuário).
         // Agora: grava na nuvem (todos veem) E no localStorage (backup pessoal).
-        //
         function saveState() {
             // ── SALVA NO LOCALSTORAGE (backup pessoal do zoom/pan) ──
             try {
@@ -1148,14 +1127,10 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  LOAD LOCAL STATE — CARREGA APENAS ZOOM E PAN DO LOCAL
-        // ═══════════════════════════════════════════════════════════════════
-        // 
+        // ═════ LOAD LOCAL STATE — CARREGA APENAS ZOOM E PAN DO LOCAL ═══════════
         // As marcações (marks) agora vêm da nuvem, não do localStorage.
         // Mas o zoom e a posição (pan) são pessoais — cada um pode ver
         // o mapa de um ângulo diferente no próprio celular.
-        //
         function loadLocalState() {
             try {
                 const zoom = localStorage.getItem('territoryZoom');
@@ -1171,14 +1146,10 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  TOGGLE EDGE — MARCA/DESMARCA ARESTA (AGORA SINCRONIZA)
-        // ═══════════════════════════════════════════════════════════════════
-        // 
+        // ═════TOGGLE EDGE — MARCA/DESMARCA ARESTA (AGORA SINCRONIZA) ══════
         // Esta função continua igual na lógica, mas agora chama saveState()
         // que manda para a nuvem. Quando o dado chega na nuvem, o Firebase
         // avisa TODOS os outros navegadores conectados automaticamente!
-        //
         function toggleEdge(edgeId) {
             if (appState.marks[edgeId]) {
                 delete appState.marks[edgeId];  // Desmarca
@@ -1197,9 +1168,7 @@
             showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  MARK ALL / UNMARK ALL — AGORA TAMBÉM SINCRONIZAM
-        // ═══════════════════════════════════════════════════════════════════
+        // ══════  MARK ALL / UNMARK ALL — AGORA TAMBÉM SINCRONIZA  ═════════
         function markAllTerritoryEdges() {
             const territoryNum = getTerritoryNumber();
             if (!territoryNum) return;
@@ -1234,9 +1203,7 @@
             showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  RESET MARKS — LIMPA TUDO NA NUVEM
-        // ═══════════════════════════════════════════════════════════════════
+        // ═══════  RESET MARKS — LIMPA TUDO NA NUVEM   ══════════════
         function resetMarks() {
             const count = Object.keys(appState.marks).length;
             if (count === 0) {
@@ -1252,13 +1219,9 @@
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  EXPORT DATA — AGORA EXPORTA DA NUVEM (OPCIONAL)
-        // ═══════════════════════════════════════════════════════════════════
-        // 
+        // ═══════  EXPORT DATA — AGORA EXPORTA DA NUVEM (OPCIONAL) ═════════
         // O export continua funcionando igual — ele pega o estado atual
         // (que já está sincronizado com a nuvem) e baixa como JSON.
-        //
         function exportData() {
             const data = {
                 exportDate: new Date().toISOString(),
@@ -1277,8 +1240,7 @@
             showStatus('Exportado! 💾');
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  AS OUTRAS FUNÇÕES PERMANECEM IGUAIS:
+        // ════  AS OUTRAS FUNÇÕES PERMANECEM IGUAIS:  =======
         //  renderOverlay(), handleVertexClick(), handleEdgeClick(),
         //  handleQuadraClick(), openModal(), toggleEdgeFromModal(),
         //  closeModal(), showStatus(), zoomIn(), zoomOut(), resetView(),
@@ -1289,9 +1251,7 @@
         
         // ... (cole aqui todo o restante do seu código original, sem alterar)
         
-        // ================================================================
-        // RENDERIZAR OVERLAY COM VÉRTICES E ARESTAS
-        // ================================================================
+        // ===== RENDERIZAR OVERLAY COM VÉRTICES E ARCOS =================
         function renderOverlay() {
             const svg = document.getElementById('overlaySvg');
             let html = '';
@@ -1384,7 +1344,7 @@
                 const edgesAttr = v.edges.join(',');
                 const selectedClass = (appState.selectedVertex === v.id) ? 'selected' : '';
                 html += `<circle class="vertex ${selectedClass}" id="${v.id}"
-                         cx="${v.x}" cy="${v.y}" r="7"
+                         cx="${v.x}" cy="${v.y}" r="3"
                          data-edges="${edgesAttr}"
                          onclick="handleVertexClick(event, '${v.id}', '${edgesAttr}')"/>`;
             });
@@ -1392,9 +1352,7 @@
             svg.innerHTML = html;
         }
 
-        // ================================================================
-        // CLIQUE EM VÉRTICE - Lógica principal do sistema
-        // ================================================================
+        // ======   CLIQUE EM VÉRTICE - Lógica principal do sistema  ==============
         function handleVertexClick(event, vertexId, edgesAttr) {
             event.stopPropagation();
 
@@ -1435,9 +1393,7 @@
             }
         }
 
-        // ================================================================
-        // ALTERNAR ARESTA (MARCA/DESMARCA)
-        // ================================================================
+        // =======  ALTERNAR ARESTA (MARCA/DESMARCA)  ===========
         function toggleEdge(edgeId) {
             if (appState.marks[edgeId]) {
                 delete appState.marks[edgeId];
@@ -1532,9 +1488,7 @@
             if (e.target === this) closeModal();
         });
 
-        // ================================================================
-        // FEEDBACK VISUAL
-        // ================================================================
+        // ===========   FEEDBACK VISUAL  =============
         let statusTimeout;
         function showStatus(text) {
             const panel = document.getElementById('statusPanel');
@@ -1596,9 +1550,7 @@
                 `translate(-50%, -50%) translate(${appState.panX}px, ${appState.panY}px) scale(${appState.zoom})`;
         }
 
-        // ================================================================
-        // INTERAÇÕES (TOQUE E MOUSE)  =  event listeners
-        // ================================================================
+        // ====== INTERAÇÕES (TOQUE E MOUSE)  =  event listeners  ========
         function setupInteractions() {
             const container = document.getElementById('mapContainer');
 
@@ -1744,8 +1696,7 @@
             applyTransform();
         }
 
-        /**
-             * Altera o valor do input de território (incrementa ou decrementa)
+        /**    * Altera o valor do input de território (incrementa ou decrementa)
              * @param {number} delta - +1 para próximo, -1 para anterior
              */
         function changeTerritory(delta) {
@@ -1761,9 +1712,7 @@
             updateArrowButtons(value);
         }
 
-        /**
-         * Valida o input manual e atualiza estado dos botões
-         */
+        /** * Valida o input manual e atualiza estado dos botões  */
         function validateTerritoryInput() {
             const input = document.getElementById('territoryInput');
             let value = parseInt(input.value, 10);
@@ -1788,10 +1737,8 @@
             updateArrowButtons(value);
         }
 
-        /**
-        * Atualiza estado (habilitado/desabilitado) dos botões de seta
-        * @param {number|null} currentValue - valor atual do input
-        */
+        /**  * Atualiza estado (habilitado/desabilitado) dos botões de seta
+        * @param {number|null} currentValue - valor atual do input   */
         function updateArrowButtons(currentValue) {
             const btnDec = document.getElementById('btnDecrement');
             const btnInc = document.getElementById('btnIncrement');
@@ -1810,9 +1757,7 @@
             updateArrowButtons(null);
         });
 
-        // ================================================================
-        // MARCAR / DESMARCAR TODAS AS ARESTAS DE UM TERRITÓRIO   TRECHO 2 ENVIADO
-        // ================================================================
+        // ==  MARCAR / DESMARCAR TODAS AS ARESTAS DE UM TERRITÓRIO TRECHO 2 ENVIADO =======
         function getTerritoryNumber() {
             const input = document.getElementById('territoryInput');
             const value = parseInt(input.value, 10);
@@ -1872,9 +1817,7 @@
             showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
         }
 
-        // ================================================================
-        // RESETAR E EXPORTAR
-        // ================================================================
+        // ============  RESETAR E EXPORTAR   ==========
         function resetMarks() {
             const count = Object.keys(appState.marks).length;
             if (count === 0) {
@@ -1941,11 +1884,8 @@
         document.getElementById('mapa-imagem').addEventListener('click', function(e) {
             // Seu código de clique no mapa...
         });
-        
         // ... todo o resto do seu JavaScript ...   */
-        // ═══════════════════════════════════════════════════════════════════
-        //  INICIALIZAR
-        // ═══════════════════════════════════════════════════════════════════
+        // ══════════     INICIALIZAR      ════════════════
         window.addEventListener('DOMContentLoaded', init);
         window.addEventListener('resize', () => setTimeout(centerMap, 100));
         document.addEventListener('contextmenu', e => e.preventDefault());
