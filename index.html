@@ -1,595 +1,413 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <!-- Meta tags básicas (sempre no topo) -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🗺️ Sistema de Controle de Territórios v7.1 - </title>
-    
-    <!-- 1.1 SEU CSS EXISTENTE dentro deste style   -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sistema de Controle de Territórios v8.0 - OpenStreetMap</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Firebase v8 (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
+        /* ============================================
+        RESET E BASE
+        ============================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
 
+        html,
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a1a;
-            color: #fff;
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
             overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            touch-action: none;
         }
 
-        :root {
-            --top-bar-height: 95px;
-        }
-
-        .top-bar {
+        /* ============================================
+        TELA DE LOGIN
+        ============================================ */
+        #loginScreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: var(--top-bar-height);
-            background: rgba(10, 10, 30, 0.95);
-            backdrop-filter: blur(12px);
+            inset: 0;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
-            padding: 6px 12px;
-            gap: 6px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 10000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #loginScreen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px 35px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-box h1 {
+            font-size: 22px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .login-box .subtitle {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-bottom: 28px;
+        }
+
+        .login-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .login-input::placeholder {
+            color: #8892b0;
+        }
+
+        .login-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-error {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 12px;
+            min-height: 18px;
+        }
+
+        /* ============================================
+        APP PRINCIPAL
+        ============================================ */
+        #appContainer {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        #appContainer.active {
+            display: flex;
+        }
+
+        /* Barra superior */
+        .top-bar {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
             z-index: 1000;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
         }
 
         .top-bar-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            min-height: 32px;
-        }
-
-        .top-bar h1 {
-            font-size: 15px;
-            font-weight: 600;
-            color: #00ff88;
-            white-space: nowrap;
-        }
-
-        .territory-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            flex-wrap: wrap;
-        }
-
-        .territory-controls label {
-            font-size: 12px;
-            color: #aaa;
-            white-space: nowrap;
-        }
-
-        .territory-input {
-            width: 52px;
-            background: linear-gradient(145deg, #1e1e3f, #151530);
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            color: #00ff88;
-            padding: 6px 8px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;
-            outline: none;
-            appearance: textfield;
-        }
-
-        .territory-input::-webkit-outer-spin-button,
-        .territory-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .territory-input:focus {
-            border-color: #00ff88;
-            box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
-        }
-
-        .btn-territory {
+            gap: 10px;
             flex: 1;
-            min-width: 0;
-            justify-content: center;
-            font-size: 11px;
-            padding: 6px 10px;
+            min-width: 200px;
         }
 
-        .btn-mark-all {
-            background: linear-gradient(145deg, #004d2a, #003d1f);
-            border-color: rgba(0, 255, 136, 0.4);
-            color: #00ff88;
+        .top-bar-header h1 {
+            font-size: 16px;
+            color: #fff;
+            white-space: nowrap;
         }
 
-        .btn-mark-all:hover {
-            background: linear-gradient(145deg, #006b3a, #004d2a);
-            border-color: #00ff88;
+        .user-badge {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
-        .btn-unmark-all {
-            background: linear-gradient(145deg, #3a2020, #2a1515);
-            border-color: rgba(255, 100, 100, 0.35);
-            color: #ffaaaa;
-        }
-
-        .btn-unmark-all:hover {
-            background: linear-gradient(145deg, #502828, #3a2020);
-            border-color: rgba(255, 100, 100, 0.6);
-        }
-
+        /* Controles */
         .controls {
             display: flex;
             gap: 6px;
-            align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            background: linear-gradient(145deg, #1e1e3f, #151530);
+            padding: 8px 12px;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff;
-            padding: 7px 12px;
-            border-radius: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #e0e0e0;
+            font-size: 13px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            user-select: none;
+            transition: all 0.2s;
             white-space: nowrap;
         }
 
         .btn:hover {
-            background: linear-gradient(145deg, #2a2a5a, #202050);
-            border-color: rgba(0, 255, 136, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .btn:active {
-            transform: translateY(0) scale(0.95);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .btn-zoom {
-            font-size: 16px;
-            padding: 6px 10px;
-            min-width: 38px;
-            justify-content: center;
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            color: #fff;
+        }
+
+        .btn-blue:hover {
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-mark-all {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            color: #fff;
+        }
+
+        .btn-unmark-all {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            border: none;
+            color: #fff;
         }
 
         .btn-reset {
-            background: linear-gradient(145deg, #5c0000, #3a0000);
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            border: none;
+            color: #fff;
         }
 
-        .btn-reset:hover {
-            background: linear-gradient(145deg, #7a0000, #5c0000);
+        /* Controles de território */
+        .territory-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .map-container {
-            position: fixed;
-            top: var(--top-bar-height);
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: hidden;
-            background: #050510;
-            cursor: grab;
+        .territory-controls label {
+            font-size: 14px;
+            color: #1865c9;
+            white-space: nowrap;
         }
 
-        .map-container:active {
-            cursor: grabbing;
+        .territory-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .map-wrapper {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-origin: center center;
-            will-change: transform;
+        .btn-arrow {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #e0e0e0;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        .map-image {
-            display: block;
-            max-width: 100vw;
-            max-height: calc(100vh - var(--top-bar-height));
-            user-select: none;
-            pointer-events: none;
+        .btn-arrow:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .overlay-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .btn-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .territory-input {
+            width: 56px;
+            height: 32px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .territory-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+        }
+
+        .btn-action {
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        /* Mapa Leaflet */
+        #map {
+            flex: 1;
             width: 100%;
-            height: 100%;
-            pointer-events: all;
+            min-height: 0;
+            background: #1a1a2e;
         }
 
-        /* ================================================================
-           VÉRTICES - Pontos clicáveis nas esquinas das quadras
-           ================================================================ */
+        /* Customização do Leaflet */
+        .leaflet-container {
+            background: #1a1a2e !important;
+        }
+
+        /* ============================================
+        OVERLAY SVG SOBRE O MAPA (via Leaflet)
+        ============================================ */
+        .quadra-poly {
+            fill: rgba(79, 172, 254, 0.08);
+            stroke: rgba(79, 172, 254, 0.3);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+
+        .quadra-poly:hover {
+            fill: rgba(79, 172, 254, 0.18);
+        }
+
+        .quadra-label {
+            font-size: 15px;
+            font-weight: 800;
+            fill: rgba(35, 7, 197, 0.85);
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .edge-guide {
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 8;
+            fill: none;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
+
+        .edge {
+            stroke: rgba(255, 255, 255, 0.5);
+            stroke-width: 2.5;
+            fill: none;
+            pointer-events: stroke;
+            cursor: pointer;
+            transition: stroke 0.2s, stroke-width 0.2s;
+        }
+
+        .edge:hover {
+            stroke: #4facfe;
+            stroke-width: 4;
+        }
+
+        .edge.marked {
+            stroke: #38ef7d;
+            stroke-width: 4;
+            filter: drop-shadow(0 0 4px rgba(56, 239, 125, 0.6));
+        }
+
         .vertex {
-            fill: rgba(255, 255, 255, 0.6);
-            stroke: rgba(0, 255, 136, 0.8);
+            fill: #4facfe;
+            stroke: #fff;
             stroke-width: 2;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
         }
 
         .vertex:hover {
-            fill: #00ff88;
-            stroke: #fff;
-            stroke-width: 3;
-            filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.8));
+            fill: #fff;
+            stroke: #4facfe;
             r: 10;
         }
 
         .vertex.selected {
-            fill: #00ff88;
+            fill: #ffd700;
             stroke: #fff;
-            stroke-width: 3;
-            filter: drop-shadow(0 0 12px rgba(0, 255, 136, 1));
             r: 10;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
         }
 
         .vertex.pending {
-            fill: rgba(255, 200, 0, 0.8);
-            stroke: #ffc800;
-            stroke-width: 3;
-            filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.8));
+            fill: #ff6b6b;
+            stroke: #fff;
+            r: 10;
             animation: pulse 1s infinite;
-        }
-
-        /* ================================================================
-           ARESTAS (FACES) - Linhas verdes entre vértices
-           ================================================================ */
-        .edge {
-            fill: none;
-            stroke: transparent;
-            stroke-width: 20;
-            /* Área de toque grande */
-            stroke-linecap: round;
-            cursor: pointer;
-            pointer-events: stroke;
-            transition: stroke 0.2s ease;
-        }
-
-        .edge:hover {
-            stroke: rgba(0, 255, 136, 0.3);
-        }
-
-        .edge.marked {
-            stroke: #00ff88;
-            stroke-width: 7;
-            /* 40% mais grosso que 5px */
-            filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.9));
-        }
-
-        .edge-guide {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.08);
-            stroke-width: 1;
-            pointer-events: none;
-        }
-
-        /* ================================================================
-           ÁREA DA QUADRA - Polígono de fundo
-           ================================================================ */
-        .quadra-poly {
-            fill: transparent;
-            stroke: rgba(255, 255, 255, 0.1);
-            stroke-width: 1;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .quadra-poly:hover {
-            fill: rgba(0, 255, 136, 0.04);
-            stroke: rgba(0, 255, 136, 0.3);
-        }
-
-        .quadra-label {
-            fill: rgba(255, 255, 255, 0.95);
-            font-size: 1px;
-            font-weight: bold;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            pointer-events: none;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.9);
-        }
-
-        /* ================================================================
-           PAINEL DE STATUS
-           ================================================================ */
-        .status-panel {
-            position: fixed;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(10, 10, 30, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 136, 0.25);
-            font-size: 13px;
-            color: #ccc;
-            z-index: 1001;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            text-align: center;
-            max-width: 90vw;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        .status-panel.visible {
-            opacity: 1;
-        }
-
-        .status-panel strong {
-            color: #00ff88;
-        }
-
-        .status-panel .pending-text {
-            color: #ffc800;
-        }
-
-        /* CSS para garantir responsividade e alinhamento correto do Gemini */
-        .territorio-control-container {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-            padding: 10px;
-            font-family: sans-serif;
-        }
-
-        .btn-group-territorio {
-            display: flex;
-            gap: 5px;
-        }
-
-        .btn-action {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-
-        /* Estilos dos botões */
-        .btn-green {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .btn-green:hover {
-            background-color: #45a049;
-        }
-
-        .btn-red {
-            background-color: #f76257;
-            color: white;
-        }
-
-        .btn-red:hover {
-            background-color: #de3023;
-        }
-
-        .btn-blue {
-            background-color: #2196F3;
-            color: white;
-        }
-
-        .btn-blue:hover {
-            background-color: #0b7dda;
-        }
-
-        /* Ajuste para telas pequenas (smartphones) */
-        @media (max-width: 600px) {
-            .territorio-control-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .btn-group-territorio {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .btn-action {
-                flex: 1;
-                text-align: center;
-                padding: 10px 5px;
-                font-size: 12px;
-            }
-        }
-
-        /* FIM  CSS para garantir responsividade e alinhamento correto */
-
-
-        /* ================================================================
-           INSTRUÇÕES
-           ================================================================ */
-        .instructions {
-            position: fixed;
-            top: calc(var(--top-bar-height) + 10px);
-            left: 10px;
-            background: rgba(10, 10, 30, 0.92);
-            backdrop-filter: blur(10px);
-            padding: 14px;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            font-size: 12px;
-            color: #aaa;
-            max-width: 220px;
-            z-index: 999;
-            line-height: 1.7;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .instructions strong {
-            color: #00ff88;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-
-        .instructions .step {
-            margin-bottom: 4px;
-        }
-
-        .instructions .step-num {
-            color: #00ff88;
-            font-weight: bold;
-        }
-
-        /* ================================================================
-           MODAL DE FACES
-           ================================================================ */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: linear-gradient(145deg, #151530, #0a0a1a);
-            border: 1px solid rgba(0, 255, 136, 0.25);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
-            animation: modalIn 0.3s ease;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9) translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-title {
-            font-size: 18px;
-            color: #00ff88;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 28px;
-            cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-            line-height: 1;
-        }
-
-        .modal-close:hover {
-            opacity: 1;
-            color: #ff4444;
-        }
-
-        .modal-subtitle {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 15px;
-        }
-
-        .faces-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .face-btn {
-            background: linear-gradient(145deg, #1e1e3f, #151530);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            padding: 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            user-select: none;
-        }
-
-        .face-btn:hover {
-            border-color: rgba(0, 255, 136, 0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .face-btn.marked {
-            background: linear-gradient(145deg, #004d2a, #003d1f);
-            border-color: #00ff88;
-            color: #00ff88;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
-        }
-
-        .face-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: all 0.2s;
-        }
-
-        .face-btn.marked .face-indicator {
-            background: #00ff88;
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
         }
 
         @keyframes pulse {
@@ -604,122 +422,201 @@
             }
         }
 
-        @keyframes markFlash {
-            0% {
-                stroke-width: 10;
-                filter: drop-shadow(0 0 25px rgba(0, 255, 136, 1));
-            }
-
-            100% {
-                stroke-width: 7;
-                filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.9));
-            }
+        /* ============================================
+        PAINEL DE STATUS
+        ============================================ */
+        .status-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 12px 24px;
+            font-size: 14px;
+            color: #e0e0e0;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
         }
 
-        .edge.marked {
-            animation: markFlash 0.5s ease;
+        .status-panel.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
 
+        .status-panel strong {
+            color: #4facfe;
+        }
+
+        /* ============================================
+   MODAL DE FACES
+   ============================================ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 420px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            color: #fff;
+            margin: 0;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: #a0aec0;
+            margin-top: 4px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #a0aec0;
+            font-size: 28px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .faces-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .face-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .face-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .face-btn.marked {
+            background: rgba(17, 153, 142, 0.2);
+            border-color: #11998e;
+            color: #38ef7d;
+        }
+
+        .face-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .face-btn.marked .face-indicator {
+            background: #38ef7d;
+            box-shadow: 0 0 6px rgba(56, 239, 125, 0.6);
+        }
+
+        /* ============================================
+   RESPONSIVO
+   ============================================ */
         @media (max-width: 768px) {
-            :root {
-                --top-bar-height: 108px;
-            }
-
             .top-bar {
-                padding: 5px 8px;
-                gap: 5px;
+                padding: 8px 10px;
+                gap: 6px;
             }
 
-            .top-bar h1 {
-                font-size: 12px;
-            }
-
-            .territory-controls {
-                gap: 5px;
-            }
-
-            .territory-controls label {
-                font-size: 11px;
-            }
-
-            .territory-input {
-                width: 44px;
-                padding: 5px 6px;
-                font-size: 13px;
-            }
-
-            .btn-territory {
-                flex: 1 1 calc(50% - 30px);
-                font-size: 10px;
-                padding: 5px 6px;
-            }
-
-            .btn-territory .btn-short {
-                display: inline;
-                gap: 5px;
-            }
-
-            .btn-territory .btn-full {
-                display: none;
-                gap: 5px;
+            .top-bar-header h1 {
+                font-size: 14px;
             }
 
             .btn {
-                padding: 5px 8px;
-                font-size: 11px;
+                padding: 6px 10px;
+                font-size: 12px;
             }
 
-            .btn-zoom {
-                font-size: 14px;
-                padding: 5px 8px;
-                min-width: 32px;
+            .territory-controls label {
+                font-size: 12px;
             }
 
-            .instructions {
-                display: none;
-            }
-
-            /* MODAL REDUZIDO PELA METADE NO MOBILE */
             .modal-content {
-                padding: 10px 12px;
-                max-width: 210px;
-                /* Metade de 420px */
-                border-radius: 10px;
-            }
-
-            .modal-header {
-                margin-bottom: 8px;
-                padding-bottom: 6px;
-            }
-
-            .modal-title {
-                font-size: 13px;
-            }
-
-            .modal-subtitle {
-                font-size: 10px;
-                margin-bottom: 6px;
-            }
-
-            .modal-close {
-                font-size: 20px;
+                padding: 16px;
+                max-width: 320px;
             }
 
             .faces-grid {
                 grid-template-columns: 1fr;
-                gap: 4px;
             }
 
             .face-btn {
-                padding: 6px 8px;
-                font-size: 10px;
-                border-radius: 6px;
-                gap: 4px;
-            }
-
-            .face-indicator {
-                width: 6px;
-                height: 6px;
+                padding: 10px 12px;
+                font-size: 13px;
             }
 
             .vertex {
@@ -733,605 +630,628 @@
             }
         }
 
-        @media (min-width: 769px) {
-            .btn-territory .btn-short {
-                display: none;
-            }
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
 
-            .btn-territory .btn-full {
-                display: inline;
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        /* Sync indicator */
+        .sync-indicator {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            z-index: 2000;
+            transition: all 0.3s;
+        }
+
+        .sync-indicator.online {
+            background: rgba(17, 153, 142, 0.2);
+            color: #38ef7d;
+            border: 1px solid rgba(17, 153, 142, 0.3);
+        }
+
+        .sync-indicator.offline {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .sync-indicator.syncing {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            border: 1px solid rgba(79, 172, 254, 0.3);
         }
     </style>
     <base target="_blank">
-    <base target="_blank">
-
-    
-    <!-- ========================================== -->
-    <!-- 1.2 SCRIPTS DO FIREBASE (ANTES do seu JS)  -->
-    <!-- Estes scripts carregam a biblioteca do Firebase -->
-    <!-- IMPORTANTE: Devem vir ANTES do seu código JavaScript -->
-    
-    <!-- Núcleo do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    
-    <!-- Banco de dados em tempo real -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-    
-    <!-- (Opcional) Autenticação, se precisar depois -->
-    <!-- <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script> -->
-    
 </head>
 
-<!-- === 2. CORPO DO DOCUMENTO (<body>) ==========    -->
 <body>
-    <!-- === 2.1 TODOS OS <div>s EXISTENTES AQUI   -->
-    <!-- Mantenha EXATAMENTE como estava no seu arquivo original todos os div s -->
-    <div class="top-bar">
-        <div class="top-bar-header">
-            <h1>🗺️ Controle Territórios v7.1</h1>
+
+    <!-- ============================================
+     TELA DE LOGIN
+     ============================================ -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <span class="login-icon">🗺️</span>
+            <h1>Bem-vindo(a) ao aplicativo de territórios!</h1>
+            <p class="subtitle">Sistema de Controle de Territórios v8.0</p>
+            <input type="text" id="loginName" class="login-input" placeholder="Seu nome" autocomplete="off">
+            <input type="password" id="loginPass" class="login-input" placeholder="Senha de acesso" autocomplete="off">
+            <button class="login-btn" onclick="doLogin()">Entrar</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- ============================================
+     APP PRINCIPAL
+     ============================================ -->
+    <div id="appContainer">
+        <!-- Barra superior -->
+        <div class="top-bar">
+            <div class="top-bar-header">
+                <h1>🗺️ Controle Territórios</h1>
+                <span class="user-badge" id="userBadge">Usuário</span>
+            </div>
             <div class="controls">
-                <button class="btn btn-zoom" onclick="zoomIn()">🔍+</button>
-                <button class="btn btn-zoom" onclick="zoomOut()">🔍−</button>
-                <button class="btn" onclick="resetView()">📍</button>
-                <button class="btn btn-reset" onclick="resetMarks()">🗑️</button>
-                <button class="btn" onclick="exportData()">💾</button>
+                <button class="btn btn-zoom" onclick="zoomIn()" title="Aumentar zoom">🔍+</button>
+                <button class="btn btn-zoom" onclick="zoomOut()" title="Diminuir zoom">🔍−</button>
+                <button class="btn" onclick="resetView()" title="Centralizar">📍</button>
+                <button class="btn btn-reset" onclick="resetMarks()" title="Limpar todas">🗑️</button>
+                <button class="btn" onclick="exportData()" title="Exportar">💾</button>
             </div>
-        </div>
-        <div class="territory-controls">
-            <label for="territoryInput">Território:</label>
-            <div class="territory-input-wrapper">
-                <button class="btn-arrow" id="btnDecrement" onclick="changeTerritory(-1)"
-                    title="Território anterior">−</button>
-                <input type="number" id="territoryInput" class="territory-input" min="1" max="16" placeholder="Nº"
-                    inputmode="numeric" aria-label="Número do território" onchange="validateTerritoryInput()"
-                    onkeyup="validateTerritoryInput()">
-                <button class="btn-arrow" id="btnIncrement" onclick="changeTerritory(1)"
-                    title="Próximo território">+</button>
-            </div>
-            <button onclick="mostrarTerritorioNaTela()" class="btn-action btn-blue" title="Focar território na tela">🔍
-                Mostrar</button>
-            <button onclick="markAllTerritoryEdges()" class="btn-action btn-mark-all"
-                title="Marcar todas as arestas do território">✅ Marcar todas arestas</button>
-            <button onclick="unmarkAllTerritoryEdges()" class="btn-action btn-unmark-all"
-                title="Desmarcar todas as arestas do território">❌ Desmarcar</button>
-        </div>
-    </div>
-
-    <div class="map-container" id="mapContainer">
-        <div class="map-wrapper" id="mapWrapper">
-            <img class="map-image" id="mapImage" src="Map3.png" alt="mapa" draggable="false">
-            <svg class="overlay-svg" id="overlaySvg" viewBox="0 0 1684 1352" preserveAspectRatio="xMidYMid meet"
-                xmlns="http://www.w3.org/2000/svg">
-                <!-- ====  ou  xmlns="http://www.w3.org/2000/TR/SVG">   == novo site === -->
-            </svg>
-        </div>
-    </div>
-
-    <div class="status-panel" id="statusPanel">
-        <span id="statusText">Toque em um vértice para começar</span>
-    </div>
-
-    <div class="modal-overlay" id="modalOverlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h2 class="modal-title" id="modalTitle">Quadra E - Território 9</h2>
-                    <div class="modal-subtitle" id="modalSubtitle">Gerenciamento de faces</div>
+            <div class="territory-controls">
+                <label for="territoryInput">Território:</label>
+                <div class="territory-input-wrapper">
+                    <button class="btn-arrow" id="btnDecrement" onclick="changeTerritory(-1)"
+                        title="Anterior">−</button>
+                    <input type="number" id="territoryInput" class="territory-input" min="1" max="16" placeholder="Nº"
+                        inputmode="numeric" onchange="validateTerritoryInput()" onkeyup="validateTerritoryInput()">
+                    <button class="btn-arrow" id="btnIncrement" onclick="changeTerritory(1)" title="Próximo">+</button>
                 </div>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button onclick="mostrarTerritorioNaTela()" class="btn-action btn-blue" title="Focar">🔍
+                    Mostrar</button>
+                <button onclick="markAllTerritoryEdges()" class="btn-action btn-mark-all" title="Marcar tudo">✅
+                    Marcar</button>
+                <button onclick="unmarkAllTerritoryEdges()" class="btn-action btn-unmark-all" title="Desmarcar tudo">❌
+                    Desmarcar</button>
             </div>
-            <div class="faces-grid" id="facesGrid"></div>
+        </div>
+
+        <!-- Mapa Leaflet -->
+        <div id="map"></div>
+
+        <!-- Indicador de sincronização -->
+        <div class="sync-indicator offline" id="syncIndicator">
+            <span id="syncDot">●</span>
+            <span id="syncText">Offline</span>
+        </div>
+
+        <!-- Painel de status -->
+        <div class="status-panel" id="statusPanel">
+            <span id="statusText">Toque em um vértice para começar</span>
+        </div>
+
+        <!-- Modal de faces -->
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title" id="modalTitle">Quadra E - Território 1</h2>
+                        <div class="modal-subtitle" id="modalSubtitle">Gerenciamento de faces</div>
+                    </div>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="faces-grid" id="facesGrid"></div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Carregando mapa...</div>
         </div>
     </div>
 
-<!-- ====    
-    <div id="map-container">
-        <img src="Map3.png" alt="Mapa" id="mapa-imagem">
-         Seus outros divs auxiliares
-        <div id="info-panel">...</div>
-        <div id="legend">...</div>
-         etc.
-    </div>          -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="config.js"></script>
 
-    <!-- ========================================== -->
-    <!-- 2.2 INICIALIZAÇÃO DO FIREBASE              -->
-    <!-- ESTE É O PASSO QUE FALTAVA!
-         Aqui você "liga" o Firebase com as credenciais do seu projeto   -->
     <script>
-        //-- =========  CONFIGURAÇÃO DO SEU PROJETO FIREBASE   ======
-        // Para pegar os dados: Firebase Console → Configurações do Projeto (engrenagem) 
-        // → Geral → Seus apps → Código da configuração do SDK
-        const firebaseConfig = {
-            apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",  // Chave de acesso
-            authDomain: "mapa3-terr.firebaseapp.com",           // Domínio de autenticação
-            databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",   // ← IMPORTANTE!
-            projectId: "mapa3-terr",                           // ID do projeto
-            storageBucket: "mapa3-terr.firebasestorage.app",    // Armazenamento de arquivos
-            messagingSenderId: "15579279461",                   // Notificações
-            appId: "1:15579279461:web:5ce5d4705353506262968c"   // ID do app
-            };
-
-
-        // ==========================================
-        // INICIALIZAÇÃO DO FIREBASE
-        // ==========================================
-        // Este comando "liga" o Firebase com sua configuração
+        // Inicializa Firebase (v8 compat)
         firebase.initializeApp(firebaseConfig);
-        
-        // Cria uma referência ao banco de dados
         const database = firebase.database();
-        const databaseRef = database.ref("territorios");
-        
-        // (Opcional) Mensagem no console para confirmar que funcionou
-        console.log("✅ Firebase inicializado com sucesso!");
-    </script>
+        const dbRef = database.ref("territorios");
 
-    <!-- ====== 2.3 SEU JAVASCRIPT EXISTENTE =======      -->
-    <!-- AQUI fica TODO o seu código JavaScript original
-         que faz o mapa funcionar (cliques, tooltips, etc.)
-         IMPORTANTE: Este script DEVE vir DEPOIS da inicialização do Firebase -->
-    <script>
-        // ======  AQUI O CÓDIGO JAVASCRIPT EXISTENTE
-        //  DADOS DOS TERRITÓRIOS (mantido igual ao seu)
+        console.log("✅ Firebase inicializado!");
+
+        // ═══════════════════════════════════════════════════════════════════
+        // LOGIN
+        // ═══════════════════════════════════════════════════════════════════
+        const LOGIN_PASSWORD = "terr654";
+        let currentUser = null;
+
+        function doLogin() {
+            const name = document.getElementById('loginName').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const errorEl = document.getElementById('loginError');
+
+            if (!name) {
+                errorEl.textContent = "Por favor, digite seu nome.";
+                return;
+            }
+            if (pass !== LOGIN_PASSWORD) {
+                errorEl.textContent = "Senha incorreta. Tente novamente.";
+                document.getElementById('loginPass').value = '';
+                return;
+            }
+
+            currentUser = name;
+            document.getElementById('userBadge').textContent = name;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.add('active');
+
+            // Inicializa o app após login
+            setTimeout(initApp, 500);
+        }
+
+        // Enter no login
+        document.getElementById('loginPass').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') doLogin();
+        });
+        document.getElementById('loginName').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') document.getElementById('loginPass').focus();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // DADOS DOS TERRITÓRIOS (COORDENADAS GEOGRÁFICAS LAT/LNG)
+        // ═══════════════════════════════════════════════════════════════════
+        // ⚠️ Substitua pelas coordenadas reais das quadras do seu território.
+        // Use https://www.openstreetmap.org para obter lat/lng dos vértices.
+
         const territoriesData = {
-                1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(55, 255, 255, 0.95)' },
-                2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4D03F' },
-                3: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#D5A6BD' },
-                4: { quadras: ['A', 'B', 'C', 'D', 'E'], color: '#F4B4B4' },
-                5: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#5B9BD5' },
-                6: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#F4D03F' },
-                7: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#5B9BD5' },
-                8: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], color: '#F4B4B4' },
-                9: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], color: '#F4D03F' },
-                10: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#D5D5D5' },
-                11: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: '#F4D03F' },
-                12: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: '#F4D03F' },
-                13: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' },
-                14: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' },
-                15: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: '#F4B4B4' },
-                16: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: '#F4B4B4' }
-            };
+            1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(79,172,254,0.2)' },
+            2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(255,107,107,0.2)' },
+            3: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(56,239,125,0.2)' },
+            4: { quadras: ['A', 'B', 'C', 'D', 'E'], color: 'rgba(255,215,0,0.2)' },
+            5: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(168,85,247,0.2)' },
+            6: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(251,146,60,0.2)' },
+            7: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(236,72,153,0.2)' },
+            8: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], color: 'rgba(34,211,238,0.2)' },
+            9: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], color: 'rgba(132,204,22,0.2)' },
+            10: { quadras: ['A', 'B', 'C', 'D', 'E'], color: 'rgba(244,63,94,0.2)' },
+            11: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(99,102,241,0.2)' },
+            12: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: 'rgba(20,184,166,0.2)' },
+            13: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(245,158,11,0.2)' },
+            14: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(139,92,246,0.2)' },
+            15: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: 'rgba(14,165,233,0.2)' },
+            16: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(217,70,239,0.2)' }
+        };
 
-
+        // Coordenadas de exemplo (São Paulo - Jardim das Oliveiras)
+        // FORMATO: [lat, lng] — latitude primeiro, longitude depois, coordenadas reais!
         const quadVertices = {
-                // === TERRITÓRIO 1 (Azul piscina, canto superior esquerdo) ===
-                "T1_QA": [[93, 73], [143, 401], [93, 394], [53, 77]],
-                "T1_QB": [[134, 193], [156, 191], [172, 282], [157, 348]],
-                "T1_QC": [[181, 193], [318, 180], [294, 228], [190, 231]],
-                "T1_QD": [[190, 256], [238, 254], [212, 359], [177, 356], [193, 286]],
-                "T1_QE": [[160, 380], [218, 383], [209, 405], [165, 402]],
-                "T1_QF": [[97, 420], [196, 428], [163, 502], [114, 513]],
-                "T1_QG": [[262, 505], [185, 506], [203, 472], [243, 465], [212, 453], [311, 242], [405, 287], [399, 326], [329, 304], [350, 327]],
+            // === TERRITÓRIO 1 Novos vertices do OpenStreetMap.org   ===
+            "T1_QA": [[-23.540719, -46.511972], [-23.542951, -46.508796], [-23.543384, -46.509300], [-23.541102, -46.512369]],
+            "T1_QB": [[-23.541397, -46.510717], [-23.541161, -46.510448], [-23.541791, -46.509504], [-23.542548, -46.509064]],
+            "T1_QC": [[-23.540433, -46.508882], [-23.541378, -46.509848], [-23.541014, -46.510309], [-23.540010, -46.509333], [-23.540010, -46.509022]],
+            "T1_QD": [[-23.541456, -46.509697], [-23.541004, -46.509225], [-23.542125, -46.508485], [-23.542420, -46.508914]],
+            "T1_QE": [[-23.542223, -46.508303], [-23.542489, -46.508131], [-23.542882, -46.508657], [-23.542528, -46.508850]],
+            "T1_QF": [[-23.543473, -46.509172], [-23.542607, -46.508142], [-23.542735, -46.508045], [-23.543768, -46.508785]],
+            "T1_QG": [[-23.543522, -46.507584], [-23.543079, -46.507756], [-23.542745, -46.507423], [-23.542829, -46.507899], [-23.540404, -46.508678], [-23.539971, -46.507455], [-23.540463, -46.507133], [-23.540728, -46.507949], [-23.540758, -46.507616], [-23.542922, -46.506876]],
 
-                // === TERRITÓRIO 2 (Vermelho, esquerda) ===
-                "T2_QA": [[368, 335], [395, 349], [385, 396], [343, 392]],
-                "T2_QB": [[309, 453], [329, 414], [395, 418], [401, 445]],
-                "T2_QC": [[451, 484], [288, 504], [299, 474], [409, 457], [419, 422], [407, 397], [429, 287], [467, 292], [453, 431], [428, 438], [451, 452]],
-                "T2_QD": [[489, 289], [523, 292], [527, 372], [480, 368]],
-                "T2_QE": [[630, 445], [473, 431], [473, 388], [524, 391], [539, 417], [546, 288], [569, 287]],
-                "T2_QF": [[472, 451], [565, 457], [562, 490], [472, 484]],
-                "T2_QG": [[584, 462], [639, 467], [656, 498], [583, 493]],
+            // === TERRITÓRIO 2 ===
+            "T2_QA": [[-23.540688, -46.507476], [-23.540545, -46.507025], [-23.541116, -46.506661], [-23.541485, -46.507187]],
+            "T2_QB": [[-23.541096, -46.506468], [-23.541362, -46.506162], [-23.542207, -46.506962], [-23.541657, -46.507171]],
+            "T2_QC": [[-23.539833, -46.507305], [-23.539538, -46.506919], [-23.540845, -46.505878], [-23.540983, -46.505996], [-23.540993, -46.505696], [-23.541308, -46.505427], [-23.542763, -46.506704], [-23.542340, -46.506833], [-23.541337, -46.505975], [-23.540949, -46.506393], [-23.541012, -46.506570]],
+            "T2_QD": [[-23.539439, -46.506736], [-23.539105, -46.506361], [-23.539813, -46.505696], [-23.540167, -46.506146]],
+            "T2_QE": [[-23.539577, -46.504059], [-23.540722, -46.505706], [-23.540349, -46.506098], [-23.539901, -46.505540], [-23.540044, -46.505277], [-23.538997, -46.506221], [-23.538800, -46.506082]],
+            "T2_QF": [[-23.540840, -46.505594], [-23.540137, -46.504628], [-23.540501, -46.504333], [-23.541189, -46.505250]],
+            "T2_QG": [[-23.539631, -46.503941], [-23.539793, -46.503426], [-23.540427, -46.504231], [-23.540103, -46.504548]],
 
-                // === TERRITÓRIO 3 (Cinza, superior centro) ===
-                "T3_QA": [[601, 320], [588, 284], [650, 272], [729, 313], [703, 346], [655, 319]],
-                "T3_QB": [[690, 359], [658, 386], [626, 377], [608, 339], [651, 330]],
-                "T3_QC": [[716, 358], [745, 330], [809, 349], [806, 394], [760, 392]],
-                "T3_QD": [[647, 406], [803, 413], [803, 446], [741, 455], [662, 446]],
-                "T3_QE": [[828, 397], [834, 349], [892, 357], [892, 403]],
-                "T3_QF": [[951, 363], [950, 455], [827, 446], [827, 417], [911, 426], [916, 360]],
+            // === TERRITÓRIO 3 ===
+            "T3_QA": [[-23.538303, -46.504333], [-23.538382, -46.505084], [-23.538889, -46.505502], [-23.538667, -46.505958], [-23.537994, -46.505411], [-23.537763, -46.504376]],
+            "T3_QB": [[-23.538948, -46.505384], [-23.538476, -46.504971], [-23.538412, -46.504338], [-23.538898, -46.504376], [-23.539159, -46.504837]],
+            "T3_QC": [[-23.537733, -46.504204], [-23.537389, -46.503394], [-23.537851, -46.502987], [-23.538230, -46.503496], [-23.538269, -46.504220]],
+            "T3_QD": [[-23.537940, -46.502917], [-23.538289, -46.502590], [-23.538893, -46.503147], [-23.539415, -46.503904], [-23.539356, -46.504253], [-23.539100, -46.504435]],
+            "T3_QE": [[-23.537728, -46.502901], [-23.537281, -46.503308], [-23.536809, -46.502590], [-23.537270, -46.502139]],  
+            "T3_QF": [[-23.538199, -46.502466], [-23.537850, -46.502820], [-23.537354, -46.502080], [-23.537241, -46.501839], [-23.537132, -46.502064], [-23.536724, -46.502488], [-23.536444, -46.502075], [-23.537245, -46.501254]],
 
-                // === TERRITÓRIO 4 (Rosa Salmão, superior direito) ===
-                "T4_QA": [[992, 401], [1016, 388], [1053, 397], [1080, 453], [1020, 449]],
-                "T4_QB": [[1081, 402], [1150, 407], [1143, 516]],
-                "T4_QC": [[1186, 599], [1159, 551], [1174, 410], [1211, 384]],
-                "T4_QD": [[1137, 559], [1117, 622], [1033, 470], [1090, 476]],
-                "T4_QE": [[1054, 561], [1040, 610], [974, 488], [972, 408]],
+            // === TERRITÓRIO 4 (Rosa Salmão, superior direito) ===
+            "T4_QA": [[-23.536697, -46.500741], [-23.536372, -46.501878], [-23.536077, -46.501630], [-23.535969, -46.500890], [-23.536195, -46.500075]],
+            "T4_QB": [[-23.536284, -46.499098], [-23.535821, -46.500643], [-23.535290, -46.499935]],
+            "T4_QC": [[-23.536441, -46.498701], [-23.535172, -46.499721], [-23.534750, -46.499592], [-23.536569, -46.498079]],
+            "T4_QD": [[-23.536588, -46.498787], [-23.537365, -46.498369], [-23.536756, -46.500493], [-23.536284, -46.499860]],
+            "T4_QE": [[-23.537228, -46.499484], [-23.537857, -46.499184], [-23.537346, -46.500858], [-23.536608, -46.501620]],
 
-                // === TERRITÓRIO 5 (Verde escuro, superior direito) ===
-                "T5_QA": [[1270, 140], [1286, 114], [1308, 203]],
-                "T5_QB": [[1255, 241], [1264, 168], [1318, 262], [1335, 328], [1355, 369], [1337, 388]],
-                "T5_QC": [[1244, 356], [1251, 279], [1325, 407], [1298, 445]],
-                "T5_QD": [[1240, 386], [1282, 465], [1230, 526]],
-                "T5_QE": [[1308, 470], [1360, 396], [1364, 455], [1327, 509]],
-                "T5_QF": [[1250, 554], [1293, 489], [1312, 526], [1270, 592]],
-                "T5_QG": [[1195, 672], [1220, 582], [1248, 623], [1202, 694]],
+            // === TERRITÓRIO 5 (Verde escuro, superior direito) ===
+            "T5_QA": [[-23.531908, -46.501244], [-23.532564, -46.500063], [-23.532249, -46.501147]],
+            "T5_QB": [[-23.533409, -46.498475], [-23.533734, -46.498432], [-23.533183, -46.500428], [-23.532485, -46.501029], [-23.533114, -46.499001]],
+            "T5_QC": [[-23.533468, -46.500192], [-23.533970, -46.498411], [-23.534560, -46.498282], [-23.534176, -46.499559]],
+            "T5_QD": [[-23.534471, -46.499355], [-23.534757, -46.498314], [-23.535642, -46.498142]],
+            "T5_QE": [[-23.533626, -46.498153], [-23.534058, -46.497681], [-23.534776, -46.497563], [-23.534609, -46.498046]],
+            "T5_QF": [[-23.534855, -46.498003], [-23.535042, -46.497509], [-23.535897, -46.497370], [-23.535779, -46.497864]],
+            "T5_QG": [[-23.536114, -46.497939], [-23.536261, -46.497295], [-23.537176, -46.497134], [-23.537077, -46.497359]],
+            
+            // === TERRITÓRIO 6 (Lilaz, centro esquerdo)  ===
+            "T6_QA": [[-23.544219, -46.507959], [-23.543688, -46.507584], [-23.542714, -46.506479], [-23.542842, -46.506307], [-23.543737, -46.507348], [-23.544327, -46.507809]],
+            "T6_QB": [[-23.542911, -46.506211], [-23.543029, -46.506050], [-23.544032, -46.507155], [-23.544484, -46.507487], [-23.544366, -46.507659], [-23.543865, -46.507305]],
+            "T6_QC": [[-23.541564, -46.505427], [-23.541731, -46.505331], [-23.542596, -46.506060], [-23.542370, -46.506211]],
+            "T6_QD": [[-23.542753, -46.503984], [-23.543063, -46.504375], [-23.542694, -46.504734], [-23.542478, -46.504616], [-23.543329, -46.505448], [-23.543034, -46.505834], [-23.542050, -46.505040], [-23.542940, -46.505936], [-23.542822, -46.506118], [-23.541633, -46.505062]],
+            "T6_QE": [[-23.543128, -46.505899], [-23.543393, -46.505578], [-23.544013, -46.506296], [-23.543570, -46.506447]],
+            "T6_QF": [[-23.542862, -46.504805], [-23.543137, -46.504569], [-23.544199, -46.505524], [-23.543786, -46.505706]],
 
-                // === TERRITÓRIO 6 (Lilaz, centro esquerdo) ===
-                "T6_QA": [[114, 532], [166, 521], [299, 520], [302, 538], [170, 539], [116, 551]],
-                "T6_QB": [[122, 562], [172, 551], [301, 550], [303, 568], [183, 567], [126, 579]],
-                "T6_QC": [[314, 518], [451, 502], [448, 519], [315, 533]],
-                "T6_QD": [[443, 660], [407, 656], [410, 621], [427, 603], [325, 614], [321, 579], [432, 555], [320, 560], [318, 545], [450, 534]],
-                "T6_QE": [[309, 613], [232, 613], [247, 578], [305, 580]],
-                "T6_QF": [[387, 658], [267, 670], [279, 633], [387, 623]],
+            // === TERRITÓRIO 7 (Bege, meio esquerdo) ===
+            "T7_QA": [[-23.545198, -46.505019], [-23.545744, -46.505330], [-23.544598, -46.507422], [-23.543698, -46.506613], [-23.544893, -46.506082]],
+            "T7_QB": [[-23.544204, -46.506270], [-23.543900, -46.505873], [-23.544332, -46.505615], [-23.544676, -46.504757], [-23.545075, -46.504945], [-23.544745, -46.506012]],
+            "T7_QC": [[-23.545542, -46.504236], [-23.546132, -46.504601], [-23.545778, -46.505250], [-23.545252, -46.504934]],
+            "T7_QD": [[-23.545119, -46.503732], [-23.545502, -46.503915], [-23.545114, -46.504859], [-23.544735, -46.504650]],
+            "T7_QE": [[-23.543320, -46.502836], [-23.544971, -46.503657], [-23.544509, -46.504692], [-23.543255, -46.502976]],
+            "T7_QF": [[-23.542808, -46.502595], [-23.544470, -46.504832], [-23.544293, -46.505352], [-23.543196, -46.504365], [-23.542223, -46.503072]],
 
-                // === TERRITÓRIO 7 (Bege, meio esquerdo) ===
-                "T7_QA": [[184, 774], [133, 589], [222, 580], [183, 679], [226, 757]],
-                "T7_QB": [[245, 752], [203, 674], [221, 631], [256, 630], [247, 671], [273, 739]],
-                "T7_QC": [[232, 774], [252, 826], [203, 842], [188, 792]],
-                "T7_QD": [[281, 842], [251, 768], [278, 755], [309, 830]],
-                "T7_QE": [[446, 775], [329, 821], [298, 746], [427, 750]],
-                "T7_QF": [[524, 739], [526, 686], [401, 672], [272, 687], [287, 722]],
+            
+            // === TERRITÓRIO 8 (Verde claro, centro meio) ===
+            "T8_QA": [[-23.540625, -46.503357], [-23.541077, -46.503974], [-23.540679, -46.504360], [-23.540212, -46.503716]],
+            "T8_QB": [[-23.540133, -46.503673], [-23.539872, -46.503303], [-23.540103, -46.502649], [-23.540546, -46.503287]],
+            "T8_QC": [[-23.540373, -46.501887],[-23.540934, -46.502659], [-23.540560, -46.503019], [-23.540137, -46.502498]],
+            "T8_QD": [[-23.540624, -46.503142], [-23.541022, -46.502756], [-23.541568, -46.503502], [-23.541189, -46.503882]],
+            "T8_QE": [[-23.541288, -46.503995], [-23.541661, -46.503620], [-23.542173, -46.504333], [-23.541809, -46.504692]],
+            "T8_QF": [[-23.542148, -46.503174], [-23.542684, -46.503861], [-23.542291, -46.504210], [-23.541770, -46.503512]],
+            "T8_QG": [[-23.541712, -46.503378],[-23.541201, -46.502670], [-23.541486, -46.502369], [-23.542036, -46.503045]],
+            "T8_QH": [[-23.540689, -46.501210], [-23.541378, -46.502175], [-23.541033, -46.502487], [-23.540473, -46.501757]],
+            "T8_QI": [[-23.541161, -46.500502], [-23.542656, -46.502497], [-23.542154, -46.502862], [-23.540778, -46.500952]],
 
-                // === TERRITÓRIO 8 (Verde claro, centro meio) ===
-                "T8_QA": [[611, 556], [556, 552], [558, 511], [614, 514]],
-                "T8_QB": [[632, 559], [635, 517], [664, 516], [684, 562]],
-                "T8_QC": [[694, 581], [712, 623], [643, 618], [646, 580]],
-                "T8_QD": [[553, 570], [625, 577], [623, 615], [552, 610]],
-                "T8_QE": [[532, 569], [531, 609], [466, 603], [468, 565]],
-                "T8_QF": [[530, 627], [530, 666], [464, 661], [465, 623]],
-                "T8_QG": [[553, 629], [622, 634], [619, 672], [549, 666]],
-                "T8_QH": [[641, 636], [721, 641], [744, 686], [640, 676]],
-                "T8_QI": [[549, 686], [748, 705], [753, 759], [546, 743]],
+            // === TERRITÓRIO 9 (Azul escuro, centro meio) ===
+            "T9_QA": [[-23.539625, -46.503410], [-23.539434, -46.503153], [-23.539660, -46.502531], [-23.539901, -46.502654]],
+            "T9_QB": [[-23.539507, -46.503786], [-23.538996, -46.503094], [-23.539237, -46.502337], [-23.539522, -46.502455], [-23.539325, -46.503088], [-23.539571, -46.503539]],
+            "T9_QC": [[-23.539291, -46.502252], [-23.539532, -46.501426], [-23.540225, -46.501753], [-23.539970, -46.502547], [-23.539679, -46.502439], [-23.539847, -46.501785], [-23.539591, -46.502359]],
+            "T9_QD": [[-23.539552, -46.501361], [-23.540240, -46.500562], [-23.540530, -46.500959], [-23.540260, -46.501629]],
+            "T9_QE": [[-23.538873, -46.501114], [-23.539507, -46.500363], [-23.540029, -46.500594], [-23.539424, -46.501286]],
+            "T9_QF": [[-23.538180, -46.500878], [-23.538446, -46.499993], [-23.539345, -46.500294], [-23.538741, -46.501039]],
+            "T9_QG": [[-23.537580, -46.500648], [-23.537841, -46.499789], [-23.538283, -46.499923], [-23.538086, -46.500798]],
+            "T9_QH": [[-23.537462, -46.500921], [-23.537531, -46.500787], [-23.538652, -46.501173], [-23.538318, -46.501549]],
+            "T9_QI": [[-23.538804, -46.501978], [-23.538460, -46.501597], [-23.538790, -46.501216], [-23.539301, -46.501420]],
+            "T9_QJ": [[-23.538032, -46.502048], [-23.538352, -46.501683], [-23.538588, -46.501946], [-23.538362, -46.502466]],
+            "T9_QK": [[-23.537334, -46.501130], [-23.537418, -46.501002], [-23.538141, -46.501635], [-23.537929, -46.501951]],
 
-                // === TERRITÓRIO 9 (Azul escuro, centro meio) ===
-                "T9_QA": [[706, 550], [681, 497], [701, 498], [722, 542]],
-                "T9_QB": [[674, 477], [665, 462], [731, 473], [757, 523], [739, 532], [712, 485]],
-                "T9_QC": [[740, 619], [713, 564], [727, 555], [761, 601], [748, 549], [765, 539], [793, 598]],
-                "T9_QD": [[749, 638], [799, 615], [803, 688], [770, 686]],
-                "T9_QE": [[822, 675], [819, 604], [854, 584], [859, 657]],
-                "T9_QF": [[878, 643], [876, 573], [915, 551], [947, 608]],
-                "T9_QG": [[933, 540], [965, 522], [998, 578], [967, 594]],
-                "T9_QH": [[876, 546], [874, 514], [957, 500]],
-                "T9_QI": [[818, 579], [818, 527], [852, 525], [854, 557]],
-                "T9_QJ": [[818, 503], [818, 470], [850, 470], [851, 501]],
-                "T9_QK": [[872, 472], [953, 479], [874, 497]],
+            // === TERRITÓRIO 10 (Cinza claro, centro) ===
+            "T10_QA": [[-23.540584, -46.500835], [-23.540328, -46.500471], [-23.541061, -46.499666], [-23.541326, -46.499950]],
+            "T10_QB": [[-23.539635, -46.500240], [-23.540048, -46.499805], [-23.540574, -46.499988], [-23.540117, -46.500460]],
+            "T10_QC": [[-23.538514, -46.499864], [-23.538667, -46.499333], [-23.539837, -46.499763], [-23.539468, -46.500170]],
+            "T10_QD": [[-23.537880, -46.499639], [-23.538052, -46.499130], [-23.538495, -46.499269], [-23.538382, -46.499789]],
+            "T10_QE": [[-23.538092, -46.498979], [-23.538721, -46.498631], [-23.538578, -46.499167]],
+            "T10_QF": [[-23.538691, -46.499189], [-23.538873, -46.498550], [-23.540461, -46.499135], [-23.540019, -46.499645]],
+            "T10_QG": [[-23.540166, -46.499693], [-23.540776, -46.498990], [-23.541007, -46.499521], [-23.540687, -46.499891]],
 
-                // === TERRITÓRIO 10 (Cinza claro, centro) ===
-                "T10_QA": [[781, 795], [776, 705], [803, 708], [806, 794]],
-                "T10_QB": [[825, 740], [823, 699], [856, 684], [856, 719]],
-                "T10_QC": [[879, 671], [955, 629], [973, 657], [881, 708]],
-                "T10_QD": [[975, 616], [1008, 597], [1023, 629], [993, 649]],
-                "T10_QE": [[1001, 666], [1032, 649], [1018, 696]],
-                "T10_QF": [[883, 734], [983, 677], [1006, 717], [885, 781]],
-                "T10_QG": [[825, 801], [824, 767], [860, 747], [862, 811]],
+            // === TERRITÓRIO 11 (Azul claro, centro) ===
+            "T11_QA": [[-23.537261, -46.499280], [-23.537590, -46.498228], [-23.538278, -46.497826], [-23.537929, -46.498910]],
+            "T11_QB": [[-23.536641, -46.498593], [-23.536842, -46.497847], [-23.537698, -46.497354], [-23.537462, -46.498132]],
+            "T11_QC": [[-23.537599, -46.498078], [-23.537845, -46.497268], [-23.538548, -46.496855], [-23.538322, -46.497649]],
+            "T11_QD": [[-23.538499, -46.497531], [-23.538696, -46.496807], [-23.539773, -46.496201], [-23.539546, -46.496946]],
+            "T11_QE": [[-23.538150, -46.498781], [-23.538455, -46.497746], [-23.540196, -46.496775], [-23.540466, -46.497445]],
+            "T11_QF": [[-23.539031, -46.498459], [-23.540230, -46.497751], [-23.540442, -46.498234], [-23.539640, -46.498684]],
 
-                // === TERRITÓRIO 11 (Azul claro, centro) ===
-                "T11_QA": [[1056, 639], [1070, 588], [1106, 655], [1092, 703]],
-                "T11_QB": [[1151, 582], [1174, 624], [1155, 694], [1134, 652]],
-                "T11_QC": [[1123, 681], [1147, 724], [1131, 777], [1106, 736]],
-                "T11_QD": [[1098, 768], [1122, 810], [1097, 897], [1074, 856]],
-                "T11_QE": [[985, 886], [1045, 675], [1080, 739], [1032, 898]],
-                "T11_QF": [[962, 764], [1007, 740], [972, 846], [941, 836]],
+            // === TERRITÓRIO 12 (Lilaz, MEIO DIREITO) ===
+            "T12_QA": [[-23.536116, -46.496586], [-23.535959, -46.497166], [-23.534189, -46.497455], [-23.534797, -46.496866]],
+            "T12_QB": [[-23.536321, -46.495911], [-23.536193, -46.496372], [-23.534944, -46.496651], [-23.535259, -46.496050]],
+            "T12_QC": [[-23.536498, -46.495106], [-23.536331, -46.495707], [-23.535347, -46.495814], [-23.535554, -46.495235]],
+            "T12_QD": [[-23.535632, -46.494977], [-23.535800, -46.494141], [-23.536812, -46.494119], [-23.536606, -46.494859]],
+            "T12_QE": [[-23.537029, -46.494774], [-23.537176, -46.494076], [-23.538278, -46.493862], [-23.538032, -46.494559]],
+            "T12_QF": [[-23.536832, -46.495568], [-23.536999, -46.494967], [-23.537953, -46.494817], [-23.537747, -46.495417]],
+            "T12_QG": [[-23.536596, -46.496308], [-23.536734, -46.495857], [-23.537648, -46.495653], [-23.537501, -46.496147]],
+            "T12_QH": [[-23.536390, -46.497059], [-23.536586, -46.496501], [-23.537422, -46.496404], [-23.537245, -46.496898]],
 
-                // === TERRITÓRIO 12 (Lilaz, MEIO DIREITO) ===
-                "T12_QA": [[1279, 612], [1366, 490], [1370, 542], [1299, 643]],
-                "T12_QB": [[1310, 668], [1375, 576], [1384, 619], [1330, 700]],
-                "T12_QC": [[1394, 649], [1414, 694], [1365, 765], [1341, 722]],
-                "T12_QD": [[1379, 786], [1426, 714], [1459, 765], [1405, 833]],
-                "T12_QE": [[1355, 819], [1383, 867], [1332, 941], [1308, 892]],
-                "T12_QF": [[1320, 754], [1342, 799], [1294, 864], [1273, 825]],
-                "T12_QG": [[1241, 768], [1289, 704], [1306, 734], [1260, 800]],
-                "T12_QH": [[1212, 710], [1257, 644], [1275, 679], [1231, 743]],
+            // === TERRITÓRIO 13 (Roxo, CANTO INFERIOR ESQUERDO) ===
+            "T13_QA": [[-23.541407, -46.499815], [-23.541220, -46.499547], [-23.540414, -46.497690], [-23.540640, -46.497433], [-23.540345, -46.496789], [-23.540562, -46.496618], [-23.541338, -46.498463], [-23.541142, -46.498817], [-23.542322, -46.497723], [-23.542607, -46.497830], [-23.542400, -46.498720]],
+            "T13_QB": [[-23.541515, -46.498195], [-23.541220, -46.497540], [-23.542420, -46.497057], [-23.542695, -46.496285]],
+            "T13_QC": [[-23.541112, -46.497347], [-23.540916, -46.496811], [-23.542853, -46.495073], [-23.542744, -46.495899]],
+            "T13_QD": [[-23.540758, -46.496478], [-23.540739, -46.495824], [-23.543049, -46.493871], [-23.542931, -46.494729]],
+            "T13_QE": [[-23.540197, -46.496586], [-23.540108, -46.496329], [-23.540531, -46.495980], [-23.540516, -46.496414]],
+            "T13_QF": [[-23.541337, -46.495106], [-23.540049, -46.496200], [-23.539966, -46.495942], [-23.540531, -46.495320], [-23.541357, -46.493024], [-23.541784, -46.493298]],
+            "T13_QG": [[-23.541494, -46.494971], [-23.541971, -46.493335], [-23.542590, -46.493614], [-23.542733, -46.493893]],
 
-                // === TERRITÓRIO 13 (Roxo, CANTO INFERIOR ESQUERDO) ===
-                "T13_QA": [[781, 815], [806, 810], [966, 867], [967, 897], [1029, 915], [1022, 938], [865, 885], [855, 851], [850, 993], [828, 1005], [786, 934]],
-                "T13_QB": [[871, 911], [925, 933], [911, 1096], [873, 1004]],
-                "T13_QC": [[948, 939], [992, 954], [970, 1175], [928, 1119]],
-                "T13_QD": [[1015, 960], [1057, 993], [1032, 1269], [984, 1204]],
-                "T13_QE": [[1044, 948], [1051, 924], [1068, 930], [1062, 973]],
-                "T13_QF": [[1083, 935], [1101, 940], [1102, 1021], [1183, 1193], [1145, 1204], [1069, 1076]],
-                "T13_QG": [[1066, 1104], [1123, 1216], [1054, 1235]],
+            // === TERRITÓRIO 14 (Marrom, CENTRO INFERIOR) ===
+            "T14_QA": [[-23.537442, -46.497122], [-23.537854, -46.495761], [-23.538188, -46.496265], [-23.538051, -46.496726]],
+            "T14_QB": [[-23.537952, -46.495503], [-23.538129, -46.494902], [-23.538552, -46.495503], [-23.538345, -46.496104]],
+            "T14_QC": [[-23.538228, -46.494645], [-23.538483, -46.493851], [-23.539093, -46.493829], [-23.538621, -46.495278]],
+            "T14_QD": [[-23.538798, -46.495289], [-23.539358, -46.493872], [-23.540037, -46.493872], [-23.539594, -46.495117]],
+            "T14_QE": [[-23.538355, -46.496587], [-23.538739, -46.495589], [-23.539447, -46.495385], [-23.539230, -46.496083]],
+            "T14_QF": [[-23.539443, -46.496045], [-23.539703, -46.495278], [-23.540480, -46.495085], [-23.539866, -46.495825]],
+            "T14_QG": [[-23.539772, -46.495112], [-23.540229, -46.493851], [-23.540888, -46.493899], [-23.540544, -46.494892 ]],
 
-                // === TERRITÓRIO 14 (Marrom, CENTRO INFERIOR) ===
-                "T14_QA": [[1172, 769], [1188, 710], [1241, 811], [1188, 802]],
-                "T14_QB": [[1195, 826], [1251, 833], [1274, 880], [1219, 872]],
-                "T14_QC": [[1230, 895], [1285, 900], [1316, 960], [1278, 999]],
-                "T14_QD": [[1209, 906], [1262, 1020], [1219, 1058], [1175, 963]],
-                "T14_QE": [[1136, 886], [1162, 804], [1198, 879], [1163, 936]],
-                "T14_QF": [[1119, 1012], [1115, 947], [1129, 909], [1150, 962]],
-                "T14_QG": [[1131, 1038], [1164, 987], [1202, 1073], [1165, 1107]],
+            // === TERRITÓRIO 15 (Mostarda, INFERIOR DIREITO) ===
+            "T15_QA": [[-23.536274, -46.493305], [-23.537059, -46.493176], [-23.536961, -46.493551], [-23.535909, -46.493679]],
+            "T15_QB": [[-23.536135, -46.492445], [-23.537177, -46.492263], [-23.537108, -46.492907], [-23.536056, -46.493057]],
+            "T15_QC": [[-23.536095, -46.491587], [-23.537236, -46.491416], [-23.537187, -46.492049], [-23.536056, -46.492145]],
+            "T15_QD": [[-23.536253, -46.490579], [-23.537315, -46.490546], [-23.537275, -46.491179], [-23.536164, -46.491319]],
+            "T15_QE": [[-23.537678, -46.491061], [-23.537718, -46.490557], [-23.538494, -46.490589], [-23.538494, -46.490922]],
+            "T15_QF": [[-23.537590, -46.491973], [-23.537659, -46.491351], [-23.538494, -46.491201], [-23.538455, -46.491780]],
+            "T15_QG": [[-23.537491, -46.492832], [-23.537580, -46.492231], [-23.538416, -46.492016], [-23.538396, -46.492649]],
+            "T15_QH": [[-23.537295, -46.493808], [-23.537472, -46.493111], [-23.538337, -46.492939], [-23.538298, -46.493636]],
 
-                // === TERRITÓRIO 15 (Mostarda, INFERIOR DIREITO) ===
-                "T15_QA": [[1447, 907], [1432, 881], [1492, 803], [1490, 846]],
-                "T15_QB": [[1539, 902], [1493, 964], [1459, 926], [1502, 865]],
-                "T15_QC": [[1592, 944], [1539, 1016], [1511, 984], [1557, 916]],
-                "T15_QD": [[1651, 1003], [1587, 1071], [1559, 1038], [1612, 962]],
-                "T15_QE": [[1493, 1133], [1536, 1069], [1562, 1097], [1509, 1149]],
-                "T15_QF": [[1443, 1078], [1487, 1014], [1515, 1049], [1476, 1109]],
-                "T15_QG": [[1439, 959], [1470, 993], [1426, 1057], [1396, 1024]],
-                "T15_QH": [[1347, 962], [1395, 891], [1423, 938], [1378, 998]],
-
-                // === TERRITÓRIO 16 (Bege rosado, INFERIOR DIREITO) ===
-                "T16_QA": [[1176, 1132], [1212, 1099], [1242, 1166], [1202, 1180]],
-                "T16_QB": [[1230, 1080], [1271, 1042], [1315, 1134], [1267, 1152]],
-                "T16_QC": [[1294, 1034], [1371, 1036], [1412, 1080], [1397, 1104], [1338, 1127]],
-                "T16_QD": [[1352, 1147], [1441, 1110], [1462, 1129], [1441, 1147], [1474, 1146], [1489, 1166], [1406, 1201]],
-                "T16_QE": [[1273, 1248], [1277, 1180], [1327, 1159], [1380, 1212]],
-                "T16_QF": [[1155, 1228], [1250, 1186], [1249, 1252], [1174, 1266]],
-                "T16_QG": [[1050, 1252], [1078, 1255], [1133, 1235], [1151, 1272], [1059, 1298], [1046, 1284]]
-            };
+            // === TERRITÓRIO 16 (Bege rosado, INFERIOR DIREITO) ===
+            "T16_QA": [[-23.540382, -46.493658], [-23.540716, -46.492735], [-23.541168, -46.492993], [-23.540932, -46.493711]],
+            "T16_QB": [[-23.539458, -46.493604], [-23.539880, -46.492403], [-23.540476, -46.492665], [-23.540137, -46.493652]],
+            "T16_QC": [[-23.538574, -46.492773], [-23.538623, -46.491984], [-23.538957, -46.491925], [-23.539709, -46.492279], [-23.539237, -46.493545]],
+            "T16_QD": [[-23.538647, -46.491576], [-23.538677, -46.491153], [-23.538942, -46.491201], [-23.538687, -46.491013], [-23.538726, -46.490563], [-23.539773, -46.491029], [-23.539758, -46.492108]],
+            "T16_QE": [[-23.539881, -46.492172], [-23.539921, -46.491094], [-23.541204, -46.491850], [-23.540555, -46.492483]],
+            "T16_QF": [[-23.540707, -46.492547], [-23.541322, -46.491936], [-23.542099, -46.492563], [-23.541912, -46.493137]],
+            "T16_QG": [[-23.542015, -46.493207], [-23.542226, -46.492633], [-23.543165, -46.493341], [-23.543175, -46.493545], [-23.542846, -46.493803], [-23.542605, -46.493497]]
+        };
 
 
-        // ═════════  ESTADO GLOBAL — AGORA COM FLAG DE SINCRONIZAÇÃO   ══════════
-        // Adicionamos 'isSyncing' para evitar um problema: quando o Firebase
-        // manda dados novos, não queremos que o navegador mande de volta,
-        // criando um loop infinito de atualizações!
+        // Centro do mapa (ajuste para sua região)
+        const MAP_CENTER = [-23.541500, -46.509500];
+        const MAP_ZOOM = 16;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ESTADO GLOBAL
+        // ═══════════════════════════════════════════════════════════════════
         let appState = {
-            zoom: 1, panX: 0, panY: 0,
-            isDragging: false, dragStartX: 0, dragStartY: 0,
-            marks: {},           // { "edgeId": true } — agora preenchido pela nuvem
+            marks: {},
             selectedVertex: null,
-            lastTouchDist: 0,
-            imgWidth: 1890, imgHeight: 2586,
-            isSyncing: false     // ← NOVO: "estou recebendo dados, não mande de volta"
+            isSyncing: false,
+            map: null,
+            svgLayer: null,
+            overlayGroup: null
         };
 
         // ═══════════════════════════════════════════════════════════════════
-        //  FUNÇÃO INIT — AGORA CONECTA À NUVEM ANTES DE RENDERIZAR
+        // INICIALIZAÇÃO DO APP
         // ═══════════════════════════════════════════════════════════════════
-        function init() {
-            // CARREGA O ESTADO LOCAL PRIMEIRO (zoom, pan — coisas pessoais)
-            loadLocalState();
-            
-            // RENDERIZA O MAPA (ainda sem marcações, ou com as do localStorage)
-            renderOverlay();
-            setupInteractions();
-            centerMap();
+        function initApp() {
+            showLoading("Carregando mapa...");
 
-            // ═══════ NOVO: ESCUTA A NUVEM EM TEMPO REAL  ════════════
-            // .on('value', ...) é como ligar um "rádio" que fica ouvindo o
-            // Firebase. Sempre que ALGUÉM (A, B, C...) alterar as marcações,
-            // essa função é chamada automaticamente com os dados novos.
-            //
-            databaseRef.child("marks").on("value", function(snapshot) {
-                // snapshot é uma "foto" do banco de dados no momento atual
-                const data = snapshot.val(); // Extrai os dados em formato JavaScript
-                
-                if (data) {
-                    // Se houver dados, atualiza nosso estado
-                    appState.isSyncing = true;  // "Estou recebendo, não vou mandar de volta"
-                    appState.marks = data;       // Substitui as marcações locais pelas da nuvem
-                    renderOverlay();             // Redesenha o mapa com as novas marcações
-                    appState.isSyncing = false;  // "Pronto, já posso mandar novamente"
-                }
-            });
+            // Inicializa o mapa Leaflet
+            appState.map = L.map('map', {
+                zoomControl: false,
+                attributionControl: true
+            }).setView(MAP_CENTER, MAP_ZOOM);
 
-            // Verifica se a imagem carregou
-            setTimeout(function () {
-                const img = document.getElementById('mapImage');
-                if (!img.complete || img.naturalWidth === 0) {
-                    handleImageError();
-                }
-            }, 2000);
+            // Adiciona camada do OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 20,
+                minZoom: 3
+            }).addTo(appState.map);
+
+            // Adiciona controle de zoom customizado (direita)
+            L.control.zoom({ position: 'topright' }).addTo(appState.map);
+
+            // Cria camada SVG para overlays
+            appState.overlayGroup = L.layerGroup().addTo(appState.map);
+
+            // Renderiza os polígonos das quadras
+            renderQuadras();
+
+            // Configura listener do Firebase
+            setupFirebaseListener();
+
+            // Configura cliques no mapa
+            setupMapInteractions();
+
+            // Inicializa controles
+            document.getElementById('territoryInput').value = '1';
+            updateArrowButtons(1);
+
+            hideLoading();
+            showStatus('Mapa carregado! Toque em um vértice para começar');
         }
 
-        // ═══════  SAVE STATE — AGORA SALVA NA NUVEM E NO LOCAL ══════════════
-        // Antes: só gravava no localStorage (só no celular do usuário).
-        // Agora: grava na nuvem (todos veem) E no localStorage (backup pessoal).
+        // ═══════════════════════════════════════════════════════════════════
+        // FIREBASE - LISTENER EM TEMPO REAL
+        // ═══════════════════════════════════════════════════════════════════
+        function setupFirebaseListener() {
+            updateSyncStatus('syncing', 'Sincronizando...');
+
+            dbRef.child("marks").on("value", function (snapshot) {
+                const data = snapshot.val();
+                if (data) {
+                    appState.isSyncing = true;
+                    appState.marks = data;
+                    renderQuadras(); // Redesenha com novas marcações
+                    appState.isSyncing = false;
+                    updateSyncStatus('online', 'Sincronizado');
+                } else {
+                    updateSyncStatus('online', 'Sincronizado');
+                }
+            }, function (error) {
+                console.error("Erro Firebase:", error);
+                updateSyncStatus('offline', 'Erro de conexão');
+            });
+
+            // Monitora estado da conexão
+            const connectedRef = database.ref(".info/connected");
+            connectedRef.on("value", function (snap) {
+                if (snap.val() === true) {
+                    updateSyncStatus('online', 'Online');
+                } else {
+                    updateSyncStatus('offline', 'Offline');
+                }
+            });
+        }
+
+        function updateSyncStatus(status, text) {
+            const indicator = document.getElementById('syncIndicator');
+            const dot = document.getElementById('syncDot');
+            const txt = document.getElementById('syncText');
+
+            indicator.className = 'sync-indicator ' + status;
+            txt.textContent = text;
+
+            if (status === 'online') dot.textContent = '●';
+            else if (status === 'offline') dot.textContent = '○';
+            else dot.textContent = '◐';
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // SALVAR ESTADO (Firebase + localStorage backup)
+        // ═══════════════════════════════════════════════════════════════════
         function saveState() {
-            // ── SALVA NO LOCALSTORAGE (backup pessoal do zoom/pan) ──
+            // Salva zoom/pan no localStorage (pessoal)
             try {
-                localStorage.setItem('territoryZoom', appState.zoom);
-                localStorage.setItem('territoryPanX', appState.panX);
-                localStorage.setItem('territoryPanY', appState.panY);
-                // Não salvamos mais 'marks' no localStorage — a nuvem é a fonte da verdade!
+                if (appState.map) {
+                    const center = appState.map.getCenter();
+                    const zoom = appState.map.getZoom();
+                    localStorage.setItem('mapCenter', JSON.stringify([center.lat, center.lng]));
+                    localStorage.setItem('mapZoom', zoom);
+                }
             } catch (e) {
                 console.warn('Erro ao salvar local:', e);
             }
 
-            // ── SALVA NA NUVEM (Firebase) ──
-            // 
-            // Só envia se NÃO estivermos no meio de uma sincronização.
-            // Isso evita que, ao receber dados do Firebase, mandemos os
-            // mesmos dados de volta, criando um loop infinito.
-            //
+            // Salva marcações no Firebase (compartilhado)
             if (!appState.isSyncing) {
-                databaseRef.child("marks").set(appState.marks)
-                    .then(function() {
-                        console.log("✅ Dados salvos na nuvem com sucesso!");
+                updateSyncStatus('syncing', 'Salvando...');
+                dbRef.child("marks").set(appState.marks)
+                    .then(() => {
+                        console.log("✅ Dados salvos na nuvem!");
+                        updateSyncStatus('online', 'Sincronizado');
                     })
-                    .catch(function(error) {
-                        console.error("❌ Erro ao salvar na nuvem:", error);
+                    .catch((error) => {
+                        console.error("❌ Erro ao salvar:", error);
+                        updateSyncStatus('offline', 'Falha ao salvar');
                     });
             }
         }
 
-        // ═════ LOAD LOCAL STATE — CARREGA APENAS ZOOM E PAN DO LOCAL ═══════════
-        // As marcações (marks) agora vêm da nuvem, não do localStorage.
-        // Mas o zoom e a posição (pan) são pessoais — cada um pode ver
-        // o mapa de um ângulo diferente no próprio celular.
-        function loadLocalState() {
-            try {
-                const zoom = localStorage.getItem('territoryZoom');
-                if (zoom) appState.zoom = parseFloat(zoom);
-
-                const panX = localStorage.getItem('territoryPanX');
-                if (panX) appState.panX = parseFloat(panX);
-
-                const panY = localStorage.getItem('territoryPanY');
-                if (panY) appState.panY = parseFloat(panY);
-            } catch (e) {
-                console.warn('Erro ao carregar estado local:', e);
-            }
-        }
-
-        // ═════TOGGLE EDGE — MARCA/DESMARCA ARESTA (AGORA SINCRONIZA) ══════
-        // Esta função continua igual na lógica, mas agora chama saveState()
-        // que manda para a nuvem. Quando o dado chega na nuvem, o Firebase
-        // avisa TODOS os outros navegadores conectados automaticamente!
-        function toggleEdge(edgeId) {
-            if (appState.marks[edgeId]) {
-                delete appState.marks[edgeId];  // Desmarca
-            } else {
-                appState.marks[edgeId] = true;   // Marca
-            }
-
-            saveState();  // ← Agora envia para a nuvem!
-
-            // Feedback visual (mantido igual)
-            const parts = edgeId.split('_');
-            const t = parts[0].replace('T', '');
-            const q = parts[1].replace('Q', '');
-            const e = parts[2];
-            const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
-            showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
-        }
-
-        // ══════  MARK ALL / UNMARK ALL — AGORA TAMBÉM SINCRONIZA  ═════════
-        function markAllTerritoryEdges() {
-            const territoryNum = getTerritoryNumber();
-            if (!territoryNum) return;
-
-            const edgeIds = getTerritoryEdgeIds(territoryNum);
-            edgeIds.forEach(edgeId => {
-                appState.marks[edgeId] = true;
-            });
-
-            appState.selectedVertex = null;
-            saveState();     // ← Envia tudo de uma vez para a nuvem
-            renderOverlay();
-            showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✅`);
-        }
-
-        function unmarkAllTerritoryEdges() {
-            const territoryNum = getTerritoryNumber();
-            if (!territoryNum) return;
-
-            const edgeIds = getTerritoryEdgeIds(territoryNum);
-            let removed = 0;
-            edgeIds.forEach(edgeId => {
-                if (appState.marks[edgeId]) {
-                    delete appState.marks[edgeId];
-                    removed++;
-                }
-            });
-
-            appState.selectedVertex = null;
-            saveState();     // ← Envia tudo de uma vez para a nuvem
-            renderOverlay();
-            showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
-        }
-
-        // ═══════  RESET MARKS — LIMPA TUDO NA NUVEM   ══════════════
-        function resetMarks() {
-            const count = Object.keys(appState.marks).length;
-            if (count === 0) {
-                showStatus('Não há marcações');
-                return;
-            }
-            if (confirm(`Apagar ${count} marcações de TODOS os usuários?`)) {
-                appState.marks = {};
-                appState.selectedVertex = null;
-                saveState();  // ← Limpa na nuvem também!
-                renderOverlay();
-                showStatus('Todas removidas 🗑️');
-            }
-        }
-
-        // ═══════  EXPORT DATA — AGORA EXPORTA DA NUVEM (OPCIONAL) ═════════
-        // O export continua funcionando igual — ele pega o estado atual
-        // (que já está sincronizado com a nuvem) e baixa como JSON.
-        function exportData() {
-            const data = {
-                exportDate: new Date().toISOString(),
-                version: '4.0-cloud',  // Atualizei a versão para refletir a nuvem
-                marks: appState.marks
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `territorios_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showStatus('Exportado! 💾');
-        }
-
-        // ════  AS OUTRAS FUNÇÕES PERMANECEM IGUAIS:  =======
-        //  renderOverlay(), handleVertexClick(), handleEdgeClick(),
-        //  handleQuadraClick(), openModal(), toggleEdgeFromModal(),
-        //  closeModal(), showStatus(), zoomIn(), zoomOut(), resetView(),
-        //  centerMap(), applyTransform(), setupInteractions(),
-        //  todas as funções de toque/mouse/teclado,
-        //  mostrarTerritorioNaTela(), changeTerritory(), etc.
         // ═══════════════════════════════════════════════════════════════════
-        
-        // ... (cole aqui todo o restante do seu código original, sem alterar)
-        
-        // ===== RENDERIZAR OVERLAY COM VÉRTICES E ARCOS =================
-        function renderOverlay() {
-            const svg = document.getElementById('overlaySvg');
-            let html = '';
+        // RENDERIZAR QUADRAS NO MAPA (Leaflet SVG)
+        // ═══════════════════════════════════════════════════════════════════
+        function renderQuadras() {
+            // Limpa camada anterior
+            if (appState.overlayGroup) {
+                appState.overlayGroup.clearLayers();
+            }
 
-            // Primeiro passo: renderizar todas as quadras (polígonos de fundo)
+            // Mapa para evitar vértices duplicados
+            const vertexMap = new Map(); // key: "lat,lng" -> {id, lat, lng, edges: []}
+
+            // Renderiza polígonos e arestas
             for (let t = 1; t <= 16; t++) {
                 const data = territoriesData[t];
+                if (!data) continue;
+
                 data.quadras.forEach(quadra => {
                     const qId = `T${t}_Q${quadra}`;
                     const verts = quadVertices[qId];
                     if (!verts) return;
 
-                    // Polígono da quadra (area de fundo)
-                    const points = verts.map(v => v.join(',')).join(' ');
-                    html += `<polygon class="quadra-poly" points="${points}" 
-                             onclick="handleQuadraClick('${qId}', ${t}, '${quadra}')"/>`;
+                    // Polígono da quadra
+                    const poly = L.polygon(verts, {
+                        color: data.color.replace('0.2', '0.4'),
+                        fillColor: data.color,
+                        fillOpacity: 0.3,
+                        weight: 1,
+                        className: 'quadra-poly'
+                    }).addTo(appState.overlayGroup);
+
+                    // Clique na quadra abre modal
+                    poly.on('click', function (e) {
+                        L.DomEvent.stopPropagation(e);
+                        handleQuadraClick(qId, t, quadra);
+                    });
 
                     // Label no centro
-                    const cx = verts.reduce((s, v) => s + v[0], 0) / verts.length;
-                    const cy = verts.reduce((s, v) => s + v[1], 0) / verts.length;
-                    html += `<text class="quadra-label" x="${cx}" y="${cy}">${quadra}</text>`;
-                });
-            }
+                    const center = poly.getBounds().getCenter();
+                    const label = L.marker(center, {
+                        icon: L.divIcon({
+                            className: 'quadra-label-marker',
+                            html: `<span class="quadra-label">${quadra}</span>`,
+                            iconSize: [30, 20],
+                            iconAnchor: [15, 10]
+                        }),
+                        interactive: false
+                    }).addTo(appState.overlayGroup);
 
-            // Segundo passo: renderizar arestas (faces/lados das quadras)
-            // Cada aresta conecta dois vértices consecutivos
-            for (let t = 1; t <= 16; t++) {
-                const data = territoriesData[t];
-                data.quadras.forEach(quadra => {
-                    const qId = `T${t}_Q${quadra}`;
-                    const verts = quadVertices[qId];
-                    if (!verts) return;
-
-                    // Cria arestas entre vértices consecutivos
+                    // Arestas
                     for (let i = 0; i < verts.length; i++) {
-                        const j = (i + 1) % verts.length; // Próximo vértice (fecha o polígono)
+                        const j = (i + 1) % verts.length;
                         const v1 = verts[i];
                         const v2 = verts[j];
-
                         const edgeId = `${qId}_E${i}`;
                         const isMarked = appState.marks[edgeId] || false;
-                        const markedClass = isMarked ? 'marked' : '';
 
-                        // Linha guia fina (referência visual)
-                        html += `<line class="edge-guide" x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}"/>`;
+                        // Linha da aresta
+                        const edgeLine = L.polyline([v1, v2], {
+                            color: isMarked ? '#38ef7d' : 'rgba(255,255,255,0.6)',
+                            weight: isMarked ? 5 : 2.5,
+                            opacity: isMarked ? 1 : 0.8,
+                            className: isMarked ? 'edge marked' : 'edge'
+                        }).addTo(appState.overlayGroup);
 
-                        // Aresta interativa (área grossa para toque)
-                        html += `<line class="edge ${markedClass}" id="${edgeId}"
-                                 x1="${v1[0]}" y1="${v1[1]}" x2="${v2[0]}" y2="${v2[1]}"
-                                 onclick="handleEdgeClick(event, '${edgeId}')"/>`;
-                    }
-                });
-            }
+                        edgeLine.on('click', function (e) {
+                            L.DomEvent.stopPropagation(e);
+                            handleEdgeClick(edgeId);
+                        });
 
-            // Terceiro passo: renderizar vértices (pontos clicáveis)
-            // Usamos um Set para evitar vértices duplicados (compartilhados entre quadras)
-            const vertexMap = new Map(); // key: "x,y" -> {id, x, y, edges: []}
+                        // Área de toque maior (linha invisível)
+                        const touchLine = L.polyline([v1, v2], {
+                            color: 'transparent',
+                            weight: 20,
+                            opacity: 0
+                        }).addTo(appState.overlayGroup);
+                        touchLine.on('click', function (e) {
+                            L.DomEvent.stopPropagation(e);
+                            handleEdgeClick(edgeId);
+                        });
 
-            for (let t = 1; t <= 16; t++) {
-                const data = territoriesData[t];
-                data.quadras.forEach(quadra => {
-                    const qId = `T${t}_Q${quadra}`;
-                    const verts = quadVertices[qId];
-                    if (!verts) return;
-
-                    for (let i = 0; i < verts.length; i++) {
-                        const v = verts[i];
-                        const key = `${v[0]},${v[1]}`;
-                        const edgeId = `${qId}_E${i}`;
+                        // Coleta vértices
+                        const key1 = `${v1[0]},${v1[1]}`;
                         const prevEdgeId = `${qId}_E${(i - 1 + verts.length) % verts.length}`;
 
-                        if (!vertexMap.has(key)) {
-                            vertexMap.set(key, {
-                                id: `V_${key.replace(',', '_')}`,
-                                x: v[0], y: v[1],
+                        if (!vertexMap.has(key1)) {
+                            vertexMap.set(key1, {
+                                id: `V_${key1}`,
+                                lat: v1[0],
+                                lng: v1[1],
                                 edges: [edgeId, prevEdgeId]
                             });
                         } else {
-                            // Adiciona arestas do vértice existente
-                            const existing = vertexMap.get(key);
+                            const existing = vertexMap.get(key1);
                             if (!existing.edges.includes(edgeId)) existing.edges.push(edgeId);
                             if (!existing.edges.includes(prevEdgeId)) existing.edges.push(prevEdgeId);
                         }
@@ -1339,102 +1259,103 @@
                 });
             }
 
-            // Renderiza todos os vértices únicos
+            // Renderiza vértices
             vertexMap.forEach(v => {
-                const edgesAttr = v.edges.join(',');
-                const selectedClass = (appState.selectedVertex === v.id) ? 'selected' : '';
-                html += `<circle class="vertex ${selectedClass}" id="${v.id}"
-                         cx="${v.x}" cy="${v.y}" r="3"
-                         data-edges="${edgesAttr}"
-                         onclick="handleVertexClick(event, '${v.id}', '${edgesAttr}')"/>`;
-            });
+                const isSelected = appState.selectedVertex === v.id;
+                const vertexColor = isSelected ? '#ffd700' : '#4facfe';
+                const vertexRadius = isSelected ? 10 : 7;
 
-            svg.innerHTML = html;
+                const circle = L.circleMarker([v.lat, v.lng], {
+                    radius: vertexRadius,
+                    fillColor: vertexColor,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 1,
+                    className: isSelected ? 'vertex selected' : 'vertex'
+                }).addTo(appState.overlayGroup);
+
+                // Guarda dados no elemento para referência
+                circle.vertexId = v.id;
+                circle.vertexEdges = v.edges;
+
+                circle.on('click', function (e) {
+                    L.DomEvent.stopPropagation(e);
+                    handleVertexClick(v.id, v.edges);
+                });
+            });
         }
 
-        // ======   CLIQUE EM VÉRTICE - Lógica principal do sistema  ==============
-        function handleVertexClick(event, vertexId, edgesAttr) {
-            event.stopPropagation();
-
-            const edges = edgesAttr.split(',');
-
-            // Se já tem um vértice selecionado
+        // ═══════════════════════════════════════════════════════════════════
+        // INTERAÇÕES
+        // ═══════════════════════════════════════════════════════════════════
+        function handleVertexClick(vertexId, edges) {
             if (appState.selectedVertex) {
                 const prevVertex = appState.selectedVertex;
 
-                // Se clicou no mesmo vértice, desseleciona
                 if (prevVertex === vertexId) {
                     appState.selectedVertex = null;
-                    renderOverlay();
+                    renderQuadras();
                     showStatus('Seleção cancelada');
                     return;
                 }
 
-                // Verifica se os dois vértices compartilham uma aresta (são vizinhos)
-                const prevEdges = document.getElementById(prevVertex).getAttribute('data-edges').split(',');
-                const commonEdge = edges.find(e => prevEdges.includes(e));
+                // Encontra vértice anterior e suas arestas
+                let prevEdges = [];
+                appState.overlayGroup.eachLayer(layer => {
+                    if (layer.vertexId === prevVertex) {
+                        prevEdges = layer.vertexEdges || [];
+                    }
+                });
 
+                const commonEdge = edges.find(e => prevEdges.includes(e));
                 if (commonEdge) {
-                    // São vizinhos! Marca/desmarca a aresta
                     toggleEdge(commonEdge);
                     appState.selectedVertex = null;
-                    renderOverlay();
+                    renderQuadras();
                 } else {
-                    // Não são vizinhos, seleciona o novo vértice
                     appState.selectedVertex = vertexId;
-                    renderOverlay();
-                    showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong> (conectado por linha)');
+                    renderQuadras();
+                    showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong>');
                 }
             } else {
-                // Primeiro vértice selecionado
                 appState.selectedVertex = vertexId;
-                renderOverlay();
+                renderQuadras();
                 showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong> para marcar a aresta');
             }
         }
 
-        // =======  ALTERNAR ARESTA (MARCA/DESMARCA)  ===========
-        function toggleEdge(edgeId) {
-            if (appState.marks[edgeId]) {
-                delete appState.marks[edgeId];
-            } else {
-                appState.marks[edgeId] = true;
-            }
-
-            saveState();
-
-            // Extrai informações para feedback
-            const parts = edgeId.split('_');
-            const t = parts[0].replace('T', '');
-            const q = parts[1].replace('Q', '');
-            const e = parts[2];
-            const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
-
-            showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
-        }
-
-        // ================================================================
-        // CLIQUE DIRETO NA ARESTA
-        // ================================================================
-        function handleEdgeClick(event, edgeId) {
-            event.stopPropagation();
+        function handleEdgeClick(edgeId) {
             toggleEdge(edgeId);
             appState.selectedVertex = null;
-            renderOverlay();
+            renderQuadras();
         }
 
-        // ================================================================
-        // CLIQUE NA QUADRA (ABRE MODAL)
-        // ================================================================
         function handleQuadraClick(qId, tId, quadra) {
             const verts = quadVertices[qId];
             const numEdges = verts ? verts.length : 4;
             openModal(qId, tId, quadra, numEdges);
         }
 
-        // ================================================================
-        // MODAL DE GERENCIAMENTO
-        // ================================================================
+        function toggleEdge(edgeId) {
+            if (appState.marks[edgeId]) {
+                delete appState.marks[edgeId];
+            } else {
+                appState.marks[edgeId] = true;
+            }
+            saveState();
+
+            const parts = edgeId.split('_');
+            const t = parts[0].replace('T', '');
+            const q = parts[1].replace('Q', '');
+            const e = parts[2];
+            const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
+            showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MODAL DE FACES
+        // ═══════════════════════════════════════════════════════════════════
         function openModal(qId, tId, quadra, numEdges) {
             const modal = document.getElementById('modalOverlay');
             const title = document.getElementById('modalTitle');
@@ -1443,7 +1364,6 @@
 
             title.textContent = `Quadra ${quadra} - Território ${tId}`;
             subtitle.textContent = `Toque para marcar/desmarcar as ${numEdges} faces`;
-
             grid.innerHTML = '';
 
             const edgeNames = ['Topo', 'Lateral Direita', 'Base', 'Lateral Esquerda'];
@@ -1452,14 +1372,13 @@
             for (let i = 0; i < numEdges; i++) {
                 const edgeId = `${qId}_E${i}`;
                 const isMarked = appState.marks[edgeId] || false;
-                const btnClass = isMarked ? 'face-btn marked' : 'face-btn';
 
                 const btn = document.createElement('button');
-                btn.className = btnClass;
+                btn.className = isMarked ? 'face-btn marked' : 'face-btn';
                 btn.innerHTML = `
-                    <span class="face-indicator"></span>
-                    <span>Face ${i + 1}: ${edgeNames[i] || 'Face ' + (i + 1)}</span>
-                `;
+      <span class="face-indicator"></span>
+      <span>Face ${i + 1}: ${edgeNames[i] || 'Face ' + (i + 1)}</span>
+    `;
                 btn.onclick = () => toggleEdgeFromModal(edgeId, btn);
                 grid.appendChild(btn);
             }
@@ -1475,8 +1394,7 @@
                 appState.marks[edgeId] = true;
                 btnElement.classList.add('marked');
             }
-
-            renderOverlay();
+            renderQuadras();
             saveState();
         }
 
@@ -1488,276 +1406,9 @@
             if (e.target === this) closeModal();
         });
 
-        // ===========   FEEDBACK VISUAL  =============
-        let statusTimeout;
-        function showStatus(text) {
-            const panel = document.getElementById('statusPanel');
-            const textEl = document.getElementById('statusText');
-            textEl.innerHTML = text;
-            panel.classList.add('visible');
-
-            clearTimeout(statusTimeout);
-            statusTimeout = setTimeout(() => {
-                panel.classList.remove('visible');
-            }, 4000);
-        }
-
-        // ================================================================
-        // CONTROLES DE ZOOM E PAN
-        // ================================================================
-        function zoomIn() {
-            appState.zoom = Math.min(appState.zoom * 1.25, 15);
-            applyTransform();
-        }
-
-        function zoomOut() {
-            appState.zoom = Math.max(appState.zoom / 1.25, 0.2);
-            applyTransform();
-        }
-
-        function resetView() {
-            centerMap();
-        }
-
-        function centerMap() {
-            const container = document.getElementById('mapContainer');
-            const cw = container.clientWidth;
-            const ch = container.clientHeight;
-
-            const scaleX = cw / appState.imgWidth;
-            const scaleY = ch / appState.imgHeight;
-            let baseZoom = Math.min(scaleX, scaleY) * 0.95;
-
-            // Detecta se é dispositivo móvel (touch)
-            const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-            if (isMobile) {
-                // Zoom inicial 3x maior no mobile
-                appState.zoom = baseZoom * 3;
-            } else {
-                appState.zoom = baseZoom;
-            }
-
-            appState.panX = 0;
-            appState.panY = 0;
-
-            applyTransform();
-        }
-
-        function applyTransform() {
-            const wrapper = document.getElementById('mapWrapper');
-            wrapper.style.transform =
-                `translate(-50%, -50%) translate(${appState.panX}px, ${appState.panY}px) scale(${appState.zoom})`;
-        }
-
-        // ====== INTERAÇÕES (TOQUE E MOUSE)  =  event listeners  ========
-        function setupInteractions() {
-            const container = document.getElementById('mapContainer');
-
-            container.addEventListener('mousedown', handleMouseDown);
-            container.addEventListener('mousemove', handleMouseMove);
-            container.addEventListener('mouseup', handleMouseUp);
-            container.addEventListener('mouseleave', handleMouseUp);
-
-            container.addEventListener('touchstart', handleTouchStart, { passive: false });
-            container.addEventListener('touchmove', handleTouchMove, { passive: false });
-            container.addEventListener('touchend', handleTouchEnd);
-
-            container.addEventListener('wheel', handleWheel, { passive: false });
-
-            document.addEventListener('keydown', handleKeyDown);
-        }
-
-        function handleMouseDown(e) {
-            if (e.target.closest('.vertex') || e.target.closest('.edge') || e.target.closest('.quadra-poly')) return;
-
-            appState.isDragging = true;
-            appState.dragStartX = e.clientX - appState.panX;
-            appState.dragStartY = e.clientY - appState.panY;
-            container.style.cursor = 'grabbing';
-        }
-
-        function handleMouseMove(e) {
-            if (!appState.isDragging) return;
-            e.preventDefault();
-            appState.panX = e.clientX - appState.dragStartX;
-            appState.panY = e.clientY - appState.dragStartY;
-            applyTransform();
-        }
-
-        function handleMouseUp() {
-            appState.isDragging = false;
-            container.style.cursor = 'grab';
-        }
-
-        function handleTouchStart(e) {
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                appState.isDragging = true;
-                appState.dragStartX = touch.clientX - appState.panX;
-                appState.dragStartY = touch.clientY - appState.panY;
-            } else if (e.touches.length === 2) {
-                appState.isDragging = false;
-                appState.lastTouchDist = getTouchDistance(e.touches);
-            }
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-
-            if (e.touches.length === 1 && appState.isDragging) {
-                const touch = e.touches[0];
-                appState.panX = touch.clientX - appState.dragStartX;
-                appState.panY = touch.clientY - appState.dragStartY;
-                applyTransform();
-            } else if (e.touches.length === 2) {
-                const dist = getTouchDistance(e.touches);
-                if (appState.lastTouchDist > 0) {
-                    const scale = dist / appState.lastTouchDist;
-                    appState.zoom = Math.max(0.2, Math.min(15, appState.zoom * scale));
-                    applyTransform();
-                }
-                appState.lastTouchDist = dist;
-            }
-        }
-
-        function handleTouchEnd() {
-            appState.isDragging = false;
-            appState.lastTouchDist = 0;
-        }
-
-        function getTouchDistance(touches) {
-            const dx = touches[0].clientX - touches[1].clientX;
-            const dy = touches[0].clientY - touches[1].clientY;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        function handleWheel(e) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.85 : 1.15;
-            appState.zoom = Math.max(0.2, Math.min(6, appState.zoom * delta));
-            applyTransform();
-        }
-
-        function handleKeyDown(e) {
-            switch (e.key) {
-                case '+': case '=': zoomIn(); break;
-                case '-': case '_': zoomOut(); break;
-                case '0': centerMap(); break;
-                case 'Escape': closeModal(); break;
-            }
-        }
-        /* -------------------------------------------------
-        CALIBRAÇÕES (colado aqui, vindo do JSON exportado)
-         ------------------------------------------------- */
-        const calibrations = {
-            "1": { "zoom": 0.85, "panX": 328, "panY": 268 },
-            "2": { "zoom": 0.83, "panX": 285, "panY": 324 },
-            "3": { "zoom": 0.83, "panX": 68, "panY": 343 },
-            "4": { "zoom": 0.83, "panX": 140, "panY": 239 },
-            "5": { "zoom": 1.10, "panX": -110, "panY": -53 },
-            "6": { "zoom": 1.10, "panX": -67, "panY": -150 },
-            "7": { "zoom": 0.80, "panX": 382, "panY": -42 },
-            "8": { "zoom": 0.80, "panX": 212, "panY": -23 },
-            "9": { "zoom": 0.80, "panX": 43, "panY": -3 },
-            "10": { "zoom": 1.0, "panX": -66, "panY": -32 },
-            "11": { "zoom": 1.0, "panX": -174, "panY": 93 },
-            "12": { "zoom": 1.0, "panX": -412, "panY": -120 },
-            "13": { "zoom": 1.0, "panX": -126, "panY": -369 },
-            "14": { "zoom": 1.0, "panX": -318, "panY": -302 },
-            "15": { "zoom": 1.0, "panX": -569, "panY": -340 },
-            "16": { "zoom": 1.0, "panX": -402, "panY": -436 }
-        };
-
-        
-        // lógica correta para a função  territorios pre-gravados
-        function mostrarTerritorioNaTela() {
-            // NÃO lemos do localStorage; usamos o objeto que já está no código:
-            const num = parseInt(territoryInput.value, 10);   // número digitado pelo usuário
-            if (isNaN(num) || num < 1 || num > 16) {
-                alert('Digite um número de território válido (1‑16).');
-                return;
-            }
-
-            // Busca a calibração correspondente (se existir)
-            const cfg = calibrations[num];   // "num" vem como string, por isso usamos [] e não dot‑notation
-            if (!cfg) {
-                // Caso ainda não tenha calibração (por exemplo, você ainda não gravou)
-                // pode usar a lógica original que já existia no seu código:
-                // (coloque aqui a sua função que calcula min/max, escala, etc.)
-                // Por simplicidade, vamos apenas chamar a função que já calcula:
-                calcularPosicaoAutomatica(num);
-            } else {
-                // Aplicamos a calibração já gravada
-                appState.zoom = cfg.zoom;
-                appState.panX = cfg.panX;
-                appState.panY = cfg.panY;
-            }
-            applyTransform();
-        }
-
-        /**    * Altera o valor do input de território (incrementa ou decrementa)
-             * @param {number} delta - +1 para próximo, -1 para anterior
-             */
-        function changeTerritory(delta) {
-            const input = document.getElementById('territoryInput');
-            let value = parseInt(input.value, 10) || 0;
-            value += delta;
-
-            // Limita entre 1 e 16
-            if (value < 1) value = 1;
-            if (value > 16) value = 16;
-
-            input.value = value;
-            updateArrowButtons(value);
-        }
-
-        /** * Valida o input manual e atualiza estado dos botões  */
-        function validateTerritoryInput() {
-            const input = document.getElementById('territoryInput');
-            let value = parseInt(input.value, 10);
-
-            // Se não for número válido, não faz nada (mantém vazio)
-            if (isNaN(value)) {
-                updateArrowButtons(null);
-                return;
-            }
-
-            // Corrige se estiver fora do range
-            if (value < 1) {
-                value = 1;
-                input.value = 1;
-            }
-
-            if (value > 16) {
-                value = 16;
-                input.value = 16;
-            }
-
-            updateArrowButtons(value);
-        }
-
-        /**  * Atualiza estado (habilitado/desabilitado) dos botões de seta
-        * @param {number|null} currentValue - valor atual do input   */
-        function updateArrowButtons(currentValue) {
-            const btnDec = document.getElementById('btnDecrement');
-            const btnInc = document.getElementById('btnIncrement');
-
-            if (!btnDec || !btnInc) return;
-
-            // Desabilita "−" se estiver no 1 (ou vazio)
-            btnDec.disabled = (!currentValue || currentValue <= 1);
-
-            // Desabilita "+" se estiver no 16
-            btnInc.disabled = (currentValue >= 16);
-        }
-
-        // Inicializa estado dos botões ao carregar
-        document.addEventListener('DOMContentLoaded', function () {
-            updateArrowButtons(null);
-        });
-
-        // ==  MARCAR / DESMARCAR TODAS AS ARESTAS DE UM TERRITÓRIO TRECHO 2 ENVIADO =======
+        // ═══════════════════════════════════════════════════════════════════
+        // MARCAR / DESMARCAR TODAS DE UM TERRITÓRIO
+        // ═══════════════════════════════════════════════════════════════════
         function getTerritoryNumber() {
             const input = document.getElementById('territoryInput');
             const value = parseInt(input.value, 10);
@@ -1791,10 +1442,9 @@
             edgeIds.forEach(edgeId => {
                 appState.marks[edgeId] = true;
             });
-
             appState.selectedVertex = null;
             saveState();
-            renderOverlay();
+            renderQuadras();
             showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✅`);
         }
 
@@ -1810,40 +1460,131 @@
                     removed++;
                 }
             });
-
             appState.selectedVertex = null;
             saveState();
-            renderOverlay();
+            renderQuadras();
             showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
         }
 
-        // ============  RESETAR E EXPORTAR   ==========
-        function resetMarks() {
+        // ═══════════════════════════════════════════════════════════════════
+        // CONTROLES DE MAPA
+        // ═══════════════════════════════════════════════════════════════════
+        function zoomIn() {
+            if (appState.map) appState.map.zoomIn();
+        }
+        function zoomOut() {
+            if (appState.map) appState.map.zoomOut();
+        }
+        function resetView() {
+            if (appState.map) {
+                appState.map.setView(MAP_CENTER, MAP_ZOOM);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MOSTRAR TERRITÓRIO NA TELA
+        // ═══════════════════════════════════════════════════════════════════
+        const calibrations = {
+            "1": { center: [-23.541000, -46.509000], zoom: 17 },
+            "2": { center: [-23.542500, -46.511000], zoom: 17 },
+            "3": { center: [-23.544000, -46.512000], zoom: 17 },
+            // Adicione calibrações para os demais territórios
+        };
+
+        function mostrarTerritorioNaTela() {
+            const num = parseInt(document.getElementById('territoryInput').value, 10);
+            if (isNaN(num) || num < 1 || num > 16) {
+                alert('Digite um número de território válido (1-16).');
+                return;
+            }
+
+            const cfg = calibrations[num];
+            if (cfg && appState.map) {
+                appState.map.setView(cfg.center, cfg.zoom);
+            } else {
+                // Calcula bounding box automaticamente
+                calcularPosicaoAutomatica(num);
+            }
+        }
+
+        function calcularPosicaoAutomatica(num) {
+            const data = territoriesData[num];
+            if (!data || !appState.map) return;
+
+            const bounds = L.latLngBounds();
+            data.quadras.forEach(quadra => {
+                const qId = `T${num}_Q${quadra}`;
+                const verts = quadVertices[qId];
+                if (verts) {
+                    verts.forEach(v => bounds.extend(v));
+                }
+            });
+
+            if (bounds.isValid()) {
+                appState.map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function changeTerritory(delta) {
+            const input = document.getElementById('territoryInput');
+            let value = parseInt(input.value, 10) || 0;
+            value += delta;
+            if (value < 1) value = 1;
+            if (value > 16) value = 16;
+            input.value = value;
+            updateArrowButtons(value);
+        }
+
+        function validateTerritoryInput() {
+            const input = document.getElementById('territoryInput');
+            let value = parseInt(input.value, 10);
+            if (isNaN(value)) {
+                updateArrowButtons(null);
+                return;
+            }
+            if (value < 1) { value = 1; input.value = 1; }
+            if (value > 16) { value = 16; input.value = 16; }
+            updateArrowButtons(value);
+        }
+
+        function updateArrowButtons(currentValue) {
+            const btnDec = document.getElementById('btnDecrement');
+            const btnInc = document.getElementById('btnIncrement');
+            if (!btnDec || !btnInc) return;
+            btnDec.disabled = (!currentValue || currentValue <= 1);
+            btnInc.disabled = (currentValue >= 16);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // RESETAR TODAS AS QUADRAS de todos os TERRITÓRIOS E EXPORTAR
+        // ═══════════════════════════════════════════════════════════════════
+        /*function resetMarks() {
             const count = Object.keys(appState.marks).length;
             if (count === 0) {
                 showStatus('Não há marcações');
                 return;
             }
-            if (confirm(`Apagar ${count} marcações?`)) {
+            if (confirm(`Apagar ${count} marcações de TODOS os usuários?`)) {
                 appState.marks = {};
                 appState.selectedVertex = null;
                 saveState();
-                renderOverlay();
+                renderQuadras();
                 showStatus('Todas removidas 🗑️');
             }
-        }
+        } */
 
         function exportData() {
             const data = {
                 exportDate: new Date().toISOString(),
-                version: '3.0-vertex',
+                version: '8.0-osm',
+                exportedBy: currentUser,
                 marks: appState.marks
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `territorios_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `territorios_${new Date().toISOString().slice(0, 10)}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1851,45 +1592,72 @@
             showStatus('Exportado! 💾');
         }
 
-        /**
-        // Exemplo: função que você já tinha
-        function mostrarInfo(territorio) {
-            // Seu código existente...
-            document.getElementById('info-panel').innerHTML = territorio;
+        // ═══════════════════════════════════════════════════════════════════
+        // FEEDBACK VISUAL
+        // ═══════════════════════════════════════════════════════════════════
+        let statusTimeout;
+        function showStatus(text) {
+            const panel = document.getElementById('statusPanel');
+            const textEl = document.getElementById('statusText');
+            textEl.innerHTML = text;
+            panel.classList.add('visible');
+            clearTimeout(statusTimeout);
+            statusTimeout = setTimeout(() => {
+                panel.classList.remove('visible');
+            }, 4000);
         }
-        
-        // Exemplo: como usar o Firebase para salvar dados
-        function salvarDados(territorio, dados) {
-            // Esta é a forma de usar o Firebase (compat)
-            database.ref('territorios/' + territorio).set(dados)
-                .then(() => {
-                    console.log("Dados salvos com sucesso!");
-                })
-                .catch((erro) => {
-                    console.error("Erro ao salvar:", erro);
-                });
-        }
-        
-        // Exemplo: como ler dados do Firebase
-        function lerDados(territorio) {
-            database.ref('territorios/' + territorio).on('value', (snapshot) => {
-                const dados = snapshot.val();
-                console.log("Dados lidos:", dados);
-                // Atualize sua interface aqui
-            });
-        }
-        */
 
-        /** Seus event listeners existentes...
-        document.getElementById('mapa-imagem').addEventListener('click', function(e) {
-            // Seu código de clique no mapa...
-        });
-        // ... todo o resto do seu JavaScript ...   */
-        // ══════════     INICIALIZAR      ════════════════
-        window.addEventListener('DOMContentLoaded', init);
-        window.addEventListener('resize', () => setTimeout(centerMap, 100));
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // INTERAÇÕES DO MAPA
+        // ═══════════════════════════════════════════════════════════════════
+        function setupMapInteractions() {
+            // Fecha modal com Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === '+' || e.key === '=') zoomIn();
+                if (e.key === '-' || e.key === '_') zoomOut();
+                if (e.key === '0') resetView();
+            });
+
+            // Salva posição do mapa ao mover
+            if (appState.map) {
+                appState.map.on('moveend', function () {
+                    try {
+                        const center = appState.map.getCenter();
+                        const zoom = appState.map.getZoom();
+                        localStorage.setItem('mapCenter', JSON.stringify([center.lat, center.lng]));
+                        localStorage.setItem('mapZoom', zoom);
+                    } catch (e) { }
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // RESTAURAR POSIÇÃO DO MAPA (localStorage)
+        // ═══════════════════════════════════════════════════════════════════
+        function restoreMapPosition() {
+            try {
+                const savedCenter = localStorage.getItem('mapCenter');
+                const savedZoom = localStorage.getItem('mapZoom');
+                if (savedCenter && savedZoom && appState.map) {
+                    const center = JSON.parse(savedCenter);
+                    appState.map.setView(center, parseInt(savedZoom));
+                }
+            } catch (e) { }
+        }
+
+        // Inicializa botões
+        updateArrowButtons(null);
     </script>
 </body>
+
 </html>
