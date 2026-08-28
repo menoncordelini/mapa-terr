@@ -1,7 +1,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyA6u0NePsHWgdEnf",
     authDomain: "mapa3-terr.firebaseapp.com",    // "://firebaseapp.com",
-    databaseURL: "https://mapa3-terr-default-rtdb.firebase.com",  // "https://firebaseio.com",
+    databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",  // "https://firebaseio.com",
     projectId: "mapa3-terr",
     storageBucket: "mapa3-terr.firebasestorage.app",    // Armazenamento de arquivos
     messagingSenderId: "15579279461",                 // Notificações
