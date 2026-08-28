@@ -872,12 +872,11 @@
 
         // ═══════════════════════════════════════════════════════════════════
         // Inicializa Firebase (v8 compat)    parte anterior  inicio
-        /*firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const dbRef = database.ref("territorios");
 
         console.log("✅ Firebase inicializado!");    // final enviado para depois do login
-        */
         
         // INICIALIZAÇÃO DO FIREBASE, APÓS O LOGIN  - correção do GPT
         // Inicializa Firebase com proteção contra erro - novo por correção ChatGpt
@@ -893,10 +892,9 @@
                 throw new Error('firebaseConfig não foi carregado.');
             }
         
-        firebase.initializeApp(firebaseConfig);
-    
-        database = firebase.database();
-        dbRef = database.ref("territorios");
+        //firebase.initializeApp(firebaseConfig);
+        //database = firebase.database();
+        //dbRef = database.ref("territorios");
     
         console.log("✅ Firebase inicializado!");
         } catch (error) {
