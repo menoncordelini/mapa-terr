@@ -1175,44 +1175,43 @@
         // FIREBASE - LISTENER EM TEMPO REAL
         // ═══ Chat GPT  ═══════════ parte nova  inicio ════
         function setupFirebaseListener() {
-
-    if (!dbRef || !database) {
-        console.warn("⚠️ Firebase indisponível. Funcionando sem sincronização.");
-        updateSyncStatus('offline', 'Firebase indisponível');
-        return;
-    }
-
-    updateSyncStatus('syncing', 'Sincronizando...');
-
-    dbRef.child("marks").on("value", function (snapshot) {
-        const data = snapshot.val();
-
-        if (data) {
-            appState.isSyncing = true;
-            appState.marks = data;
-            renderQuadras();
-            appState.isSyncing = false;
-            updateSyncStatus('online', 'Sincronizado');
-        } else {
-            appState.marks = {};
-            updateSyncStatus('online', 'Sincronizado');
+            if (!dbRef || !database) {
+            console.warn("⚠️ Firebase indisponível. Funcionando sem sincronização.");
+            updateSyncStatus('offline', 'Firebase indisponível');
+            return;
         }
 
-    }, function (error) {
-        console.error("Erro Firebase:", error);
-        updateSyncStatus('offline', 'Erro de conexão');
-    });
-
-    const connectedRef = database.ref(".info/connected");
-
-    connectedRef.on("value", function (snap) {
-        if (snap.val() === true) {
-            updateSyncStatus('online', 'Online');
-        } else {
-            updateSyncStatus('offline', 'Offline');
+        updateSyncStatus('syncing', 'Sincronizando...');
+    
+        dbRef.child("marks").on("value", function (snapshot) {
+            const data = snapshot.val();
+    
+            if (data) {
+                appState.isSyncing = true;
+                appState.marks = data;
+                renderQuadras();
+                appState.isSyncing = false;
+                updateSyncStatus('online', 'Sincronizado');
+            } else {
+                appState.marks = {};
+                updateSyncStatus('online', 'Sincronizado');
+            }
+    
+        }, function (error) {
+            console.error("Erro Firebase:", error);
+            updateSyncStatus('offline', 'Erro de conexão');
+        });
+    
+        const connectedRef = database.ref(".info/connected");
+    
+        connectedRef.on("value", function (snap) {
+            if (snap.val() === true) {
+                updateSyncStatus('online', 'Online');
+            } else {
+                updateSyncStatus('offline', 'Offline');
+            }
+        });
         }
-    });
-    }
      // FIREBASE - LISTENER EM TEMPO REAL
         // ═══ Chat GPT  ═══════════ parte nova fim  ════
 
