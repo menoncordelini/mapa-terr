@@ -1141,8 +1141,8 @@
 
         // ═══════════════════════════════════════════════════════════════════
         // FIREBASE - LISTENER EM TEMPO REAL
-        // ═════════════════════════════ parte anterior  ═════════════════════
-        /*function setupFirebaseListener() {
+        // ═══════════════════════ parte anterior mantida:  inicio ═══════════
+        function setupFirebaseListener() {
             updateSyncStatus('syncing', 'Sincronizando...');
 
             dbRef.child("marks").on("value", function (snapshot) {
@@ -1170,11 +1170,13 @@
                     updateSyncStatus('offline', 'Offline');
                 }
             });
-        }     */
+        } 
+         // FIREBASE - LISTENER EM TEMPO REAL
+        // ═════════════════════ parte anterior mantida:  final  ═════════════════
 
         // FIREBASE - LISTENER EM TEMPO REAL
         // ═══ Chat GPT  ═══════════ parte nova  inicio ════
-        function setupFirebaseListener() {
+        /*function setupFirebaseListener() {
             if (!dbRef || !database) {
             console.warn("⚠️ Firebase indisponível. Funcionando sem sincronização.");
             updateSyncStatus('offline', 'Firebase indisponível');
@@ -1211,8 +1213,8 @@
                 updateSyncStatus('offline', 'Offline');
             }
         });
-        }
-     // FIREBASE - LISTENER EM TEMPO REAL
+        }   */
+         // FIREBASE - LISTENER EM TEMPO REAL
         // ═══ Chat GPT  ═══════════ parte nova fim  ════
 
         function updateSyncStatus(status, text) {
