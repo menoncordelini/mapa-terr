@@ -871,8 +871,17 @@
         });
 
         // ═══════════════════════════════════════════════════════════════════
+        // Inicializa Firebase (v8 compat)    parte anterior  inicio
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref("territorios");
+
+        console.log("✅ Firebase inicializado!");    // final enviado para depois do login   */
+
+        
         // INICIALIZAÇÃO DO FIREBASE, APÓS O LOGIN  - correção do GPT
         // Inicializa Firebase com proteção contra erro - novo por correção ChatGpt
+        /*
         let database = null;
         let dbRef = null;
         
@@ -894,7 +903,7 @@
             } catch (error) {
             console.error("❌ Erro ao inicializar Firebase:", error);
             }
-
+            */
         // ═══════════════════════════════════════════════════════════════════
         // DADOS DOS TERRITÓRIOS (COORDENADAS GEOGRÁFICAS LAT/LNG)
         // ═══════════════════════════════════════════════════════════════════
