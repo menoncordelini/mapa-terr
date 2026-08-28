@@ -1,5 +1,5 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyA6u0NePsHWgdEnf",
+    apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",
     authDomain: "mapa3-terr.firebaseapp.com",    // "://firebaseapp.com",
     databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",  // "https://firebaseio.com",
     projectId: "mapa3-terr",
