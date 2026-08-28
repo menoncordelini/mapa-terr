@@ -705,7 +705,7 @@
             border: 1px solid rgba(79, 172, 254, 0.3);
         }
     </style>
-    <base target="_blank">
+
 </head>
 
 <body>
@@ -801,12 +801,36 @@
     <script src="config.js"></script>
 
     <script>
-        // Inicializa Firebase (v8 compat)
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref("territorios");
+        // Inicializa Firebase com proteção contra erro - novo por correção ChatGpt
+        // Inicializa Firebase - Primeiro Login, depois Firebase > foi enviado para depois do Login
+        /* let database = null;
+        let dbRef = null;
+        
+        try {
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase não foi carregado.');
+            }
+        
+            if (typeof firebaseConfig === 'undefined') {
+                throw new Error('firebaseConfig não foi carregado.');
+            }
+        
+            firebase.initializeApp(firebaseConfig);
+        
+            database = firebase.database();
+            dbRef = database.ref("territorios");
+        
+            console.log("✅ Firebase inicializado!");
+            } catch (error) {
+            console.error("❌ Erro ao inicializar Firebase:", error);
+            }
 
-        console.log("✅ Firebase inicializado!");
+        // Inicializa Firebase (v8 compat)    parte anterior  inicio
+        //firebase.initializeApp(firebaseConfig);
+        //const database = firebase.database();
+        //const dbRef = database.ref("territorios");
+
+        //console.log("✅ Firebase inicializado!");     final enviado para depois do login   */
 
         // ═══════════════════════════════════════════════════════════════════
         // LOGIN
@@ -845,6 +869,31 @@
         document.getElementById('loginName').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') document.getElementById('loginPass').focus();
         });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // INICIALIZAÇÃO DO FIREBASE, APÓS O LOGIN  - correção do GPT
+        // Inicializa Firebase com proteção contra erro - novo por correção ChatGpt
+        let database = null;
+        let dbRef = null;
+        
+        try {
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase não foi carregado.');
+            }
+        
+            if (typeof firebaseConfig === 'undefined') {
+                throw new Error('firebaseConfig não foi carregado.');
+            }
+        
+            firebase.initializeApp(firebaseConfig);
+        
+            database = firebase.database();
+            dbRef = database.ref("territorios");
+        
+            console.log("✅ Firebase inicializado!");
+            } catch (error) {
+            console.error("❌ Erro ao inicializar Firebase:", error);
+            }
 
         // ═══════════════════════════════════════════════════════════════════
         // DADOS DOS TERRITÓRIOS (COORDENADAS GEOGRÁFICAS LAT/LNG)
@@ -1083,8 +1132,8 @@
 
         // ═══════════════════════════════════════════════════════════════════
         // FIREBASE - LISTENER EM TEMPO REAL
-        // ═══════════════════════════════════════════════════════════════════
-        function setupFirebaseListener() {
+        // ═════════════════════════════ parte anterior  ═════════════════════
+        /*function setupFirebaseListener() {
             updateSyncStatus('syncing', 'Sincronizando...');
 
             dbRef.child("marks").on("value", function (snapshot) {
@@ -1112,7 +1161,51 @@
                     updateSyncStatus('offline', 'Offline');
                 }
             });
+        }     */
+
+        // FIREBASE - LISTENER EM TEMPO REAL
+        // ═══ Chat GPT  ═══════════ parte nova  inicio ════
+        function setupFirebaseListener() {
+
+    if (!dbRef || !database) {
+        console.warn("⚠️ Firebase indisponível. Funcionando sem sincronização.");
+        updateSyncStatus('offline', 'Firebase indisponível');
+        return;
+    }
+
+    updateSyncStatus('syncing', 'Sincronizando...');
+
+    dbRef.child("marks").on("value", function (snapshot) {
+        const data = snapshot.val();
+
+        if (data) {
+            appState.isSyncing = true;
+            appState.marks = data;
+            renderQuadras();
+            appState.isSyncing = false;
+            updateSyncStatus('online', 'Sincronizado');
+        } else {
+            appState.marks = {};
+            updateSyncStatus('online', 'Sincronizado');
         }
+
+    }, function (error) {
+        console.error("Erro Firebase:", error);
+        updateSyncStatus('offline', 'Erro de conexão');
+    });
+
+    const connectedRef = database.ref(".info/connected");
+
+    connectedRef.on("value", function (snap) {
+        if (snap.val() === true) {
+            updateSyncStatus('online', 'Online');
+        } else {
+            updateSyncStatus('offline', 'Offline');
+        }
+    });
+    }
+     // FIREBASE - LISTENER EM TEMPO REAL
+        // ═══ Chat GPT  ═══════════ parte nova fim  ════
 
         function updateSyncStatus(status, text) {
             const indicator = document.getElementById('syncIndicator');
@@ -1144,7 +1237,8 @@
             }
 
             // Salva marcações no Firebase (compartilhado)
-            if (!appState.isSyncing) {
+            //if (!appState.isSyncing) {
+            if (!appState.isSyncing && dbRef) {
                 updateSyncStatus('syncing', 'Salvando...');
                 dbRef.child("marks").set(appState.marks)
                     .then(() => {
