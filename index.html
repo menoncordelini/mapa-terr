@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sistema de Controle de Territórios v8.0 - OpenStreetMap</title>
+    <title>Sistema de Controle de Territórios v8.1 - OpenStreetMap</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -252,7 +252,7 @@
         }
 
         .territory-controls label {
-            font-size: 14px;
+            font-size: 2px;
             color: #1865c9;
             white-space: nowrap;
         }
@@ -344,9 +344,9 @@
         }
 
         .quadra-label {
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 800;
-            fill: rgba(35, 7, 197, 0.85);
+            fill: rgba(35, 7, 197, 0.95);
             text-anchor: middle;
             dominant-baseline: middle;
             pointer-events: none;
@@ -372,12 +372,12 @@
 
         .edge:hover {
             stroke: #4facfe;
-            stroke-width: 4;
+            stroke-width: 2;
         }
 
         .edge.marked {
             stroke: #38ef7d;
-            stroke-width: 4;
+            stroke-width: 2;
             filter: drop-shadow(0 0 4px rgba(56, 239, 125, 0.6));
         }
 
@@ -801,6 +801,13 @@
     <script src="config.js"></script>
 
     <script>
+        // Inicializa Firebase (v8 compat)
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref("territorios");
+
+        console.log("✅ Firebase inicializado!");
+
         // ═══════════════════════════════════════════════════════════════════
         // LOGIN
         // ═══════════════════════════════════════════════════════════════════
@@ -838,15 +845,7 @@
         document.getElementById('loginName').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') document.getElementById('loginPass').focus();
         });
-        
-        // Inicializa Firebase (v8 compat)
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref("territorios");
 
-        console.log("✅ Firebase inicializado!");
-
-     
         // ═══════════════════════════════════════════════════════════════════
         // DADOS DOS TERRITÓRIOS (COORDENADAS GEOGRÁFICAS LAT/LNG)
         // ═══════════════════════════════════════════════════════════════════
@@ -987,7 +986,7 @@
 
             // === TERRITÓRIO 13 (Roxo, CANTO INFERIOR ESQUERDO) ===
             "T13_QA": [[-23.541407, -46.499815], [-23.541220, -46.499547], [-23.540414, -46.497690], [-23.540640, -46.497433], [-23.540345, -46.496789], [-23.540562, -46.496618], [-23.541338, -46.498463], [-23.541142, -46.498817], [-23.542322, -46.497723], [-23.542607, -46.497830], [-23.542400, -46.498720]],
-            "T13_QB": [[-23.541515, -46.498195], [-23.541220, -46.497540], [-23.542420, -46.497057], [-23.542695, -46.496285]],
+            "T13_QB": [[-23.541515, -46.498195], [-23.541220, -46.497540], [-23.542695, -46.496285], [-23.542420, -46.497057]],
             "T13_QC": [[-23.541112, -46.497347], [-23.540916, -46.496811], [-23.542853, -46.495073], [-23.542744, -46.495899]],
             "T13_QD": [[-23.540758, -46.496478], [-23.540739, -46.495824], [-23.543049, -46.493871], [-23.542931, -46.494729]],
             "T13_QE": [[-23.540197, -46.496586], [-23.540108, -46.496329], [-23.540531, -46.495980], [-23.540516, -46.496414]],
@@ -1202,7 +1201,7 @@
                         icon: L.divIcon({
                             className: 'quadra-label-marker',
                             html: `<span class="quadra-label">${quadra}</span>`,
-                            iconSize: [30, 20],
+                            iconSize: [60, 50],  //[30, 20],
                             iconAnchor: [15, 10]
                         }),
                         interactive: false
@@ -1264,7 +1263,7 @@
             vertexMap.forEach(v => {
                 const isSelected = appState.selectedVertex === v.id;
                 const vertexColor = isSelected ? '#ffd700' : '#4facfe';
-                const vertexRadius = isSelected ? 10 : 7;
+                const vertexRadius = isSelected ? 7 : 4;   // estava 10 : 7
 
                 const circle = L.circleMarker([v.lat, v.lng], {
                     radius: vertexRadius,
@@ -1487,8 +1486,21 @@
         // ═══════════════════════════════════════════════════════════════════
         const calibrations = {
             "1": { center: [-23.541000, -46.509000], zoom: 17 },
-            "2": { center: [-23.542500, -46.511000], zoom: 17 },
-            "3": { center: [-23.544000, -46.512000], zoom: 17 },
+            "2": { center: [-23.539694, -46.506243], zoom: 17 },
+            "3": { center: [-23.537629, -46.503057], zoom: 17 },
+            "4": { center: [-23.536115, -46.499580], zoom: 17 },
+            "5": { center: [-23.534945, -46.497831], zoom: 17 },
+            "6": { center: [-23.542970, -46.505578], zoom: 17 },
+            "7": { center: [-23.544327, -46.504827], zoom: 17 },
+            "8": { center: [-23.541279, -46.502970], zoom: 17 },
+            "9": { center: [-23.539066, -46.499741], zoom: 17 },
+            "10": { center: [-23.539588, -46.498110], zoom: 17 },
+            "11": { center: [-23.537532, -46.498282], zoom: 17 },
+            "12": { center: [-23.536264, -46.495922], zoom: 17 },
+            "13": { center: [-23.541495, -46.496372], zoom: 17 },
+            "14": { center: [-23.538191, -46.495535], zoom: 17.4 },
+            "15": { center: [-23.537513, -46.492381], zoom: 17.4 },
+            "16": { center: [-23.540679, -46.493465], zoom: 17.4 },
             // Adicione calibrações para os demais territórios
         };
 
