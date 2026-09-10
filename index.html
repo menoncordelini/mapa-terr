@@ -1,23 +1,26 @@
 !DOCTYPE html>
 <html lang="pt-BR">
-
+    /* == Script t28k.html enviado github tem todos os territórios e vertices novos com login, colorido == */
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sistema de Controle de Territórios v8.1 - OpenStreetMap</title>
-
-    <!-- Leaflet CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Territórios - v. 8.2</title>
+    
+    <!-- Leaflet CSS - Biblioteca para mapas interativos -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-
-    <!-- Firebase v8 (Compat) -->
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <!-- Firebase v8 (Compat) - Para salvar dados na nuvem -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="icon" href="https://example.com/path/to/your/favicon.ico" type="image/x-icon">
 
+    <!-- Arquivo de configuração externo (não expõe a API key)     -->
+    <script src="config.js"></script>          
+    
     <style>
-        /* ============================================
-        RESET E BASE
-        ============================================ */
+        /* ===== ESTILOS GERAIS ==body  color: #e0e0e0; === */
         * {
             margin: 0;
             padding: 0;
@@ -26,17 +29,14 @@
 
         html,
         body {
-            width: 100%;
-            height: 100%;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: #1a1a2e;
-            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /*background-color: #f0f2f5;   #1a1a2e; '#B0E0E6' #471691 roxo*/
+            background: #471691;
+            color: #394151;
             overflow: hidden;
         }
-
-        /* ============================================
-        TELA DE LOGIN
-        ============================================ */
+        
+        /* ===== TELA DE LOGIN ===== */
         #loginScreen {
             position: fixed;
             inset: 0;
@@ -69,7 +69,7 @@
 
         .login-box h1 {
             font-size: 22px;
-            color: #fff;
+            color: #4facfe;
             margin-bottom: 8px;
         }
 
@@ -135,21 +135,35 @@
             margin-top: 12px;
             min-height: 18px;
         }
-
-        /* ============================================
-        APP PRINCIPAL
-        ============================================ */
+        
+        /* ===== CONTAINER PRINCIPAL ===== */
         #appContainer {
             display: none;
-            width: 100%;
-            height: 100%;
             flex-direction: column;
         }
-
+        
         #appContainer.active {
             display: flex;
         }
-
+        
+        /* ===== CABEÇALHO  BARRA SUPERIOR===== */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 16px;
+            color: #4facfe;
+        }
         /* Barra superior */
         .top-bar {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -173,26 +187,159 @@
 
         .top-bar-header h1 {
             font-size: 16px;
-            color: #fff;
+            color: #163cd6;
+            white-space: nowrap;
+        }
+        
+        .top-bar-header h2 {
+            font-size: 16px;
+            color: #163cd6;
+            white-space: nowrap;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #userBadge {
+            background: #667eea;
+            color: #4facfe;
+            /*color: white;*/
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    
+        /*  sync-indicator= indicador de sincronização */
+        .sync-indicator {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 15px;
+            font-weight: 800;
+            z-index: 2000;
+            transition: all 0.3s;
+        }
+        
+        .sync-indicator.online {
+            background: #d4edda;
+            color: #38ef7d;
+            border: 1px solid rgba(17, 153, 142, 0.3);
+        }
+        
+        .sync-indicator.offline {
+            background: rgba(79, 172, 254, 0.2);
+            /*background: #f8d7da; color: #27070a;  */
+            color: #ff6b6b;
+        }
+        
+        .sync-indicator.syncing {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+        }
+
+        /* Controles de território */
+        .territory-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .territory-controls label {
+            font-size: 2px;
+            color: #1865c9;
             white-space: nowrap;
         }
 
+        .territory-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .territory-input {
+            width: 56px;
+            height: 32px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .territory-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+        }
+
+        /* Configuração do estilo dos marcadores para inserir letras nas quadras */
+        .letter-icon {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        /* Remove fundo padrão do Leaflet para o marcador de letra */
+        .letter-marker {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        /* Garante que o texto apareça acima de outros elementos */
+        .leaflet-zoom-animated {
+            z-index: 600;
+        }
+
+        /* ===== CONTROLES =são os 4 controles principais==== */
+        .controls {
+            /*background: #96c0ea; 
+            padding: 15px 20px;  */
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            /*border-bottom: 1px solid #ddd; */
+        }
+        
+        .controls input[type="number"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 80px;
+            font-size: 16px;
+        }
+        
+        .controls button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
         .user-badge {
-            background: rgba(79, 172, 254, 0.2);
+            background: rgba(79, 172, 254, 0.05);
             color: #4facfe;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
         }
-
-        /* Controles */
-        .controls {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
+        
         .btn {
             padding: 8px 12px;
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -204,12 +351,12 @@
             transition: all 0.2s;
             white-space: nowrap;
         }
-
+        
         .btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: #5568d3;
             border-color: rgba(255, 255, 255, 0.3);
         }
-
+        
         .btn-zoom {
             padding: 8px 10px;
             font-size: 14px;
@@ -243,26 +390,6 @@
             color: #fff;
         }
 
-        /* Controles de território */
-        .territory-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .territory-controls label {
-            font-size: 2px;
-            color: #1865c9;
-            white-space: nowrap;
-        }
-
-        .territory-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         .btn-arrow {
             width: 32px;
             height: 32px;
@@ -287,24 +414,6 @@
             cursor: not-allowed;
         }
 
-        .territory-input {
-            width: 56px;
-            height: 32px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            color: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            outline: none;
-        }
-
-        .territory-input:focus {
-            border-color: #4facfe;
-            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
-        }
-
         .btn-action {
             padding: 7px 14px;
             border-radius: 10px;
@@ -314,278 +423,171 @@
             border: none;
             transition: all 0.2s;
         }
-
-        /* Mapa Leaflet */
+        
+        /* ===== MAPA ===== height: calc(100vh - 180px); */
         #map {
-            flex: 1;
+            height: 100vh;
             width: 100%;
-            min-height: 0;
-            background: #1a1a2e;
         }
 
-        /* Customização do Leaflet */
-        .leaflet-container {
-            background: #1a1a2e !important;
-        }
-
-        /* ============================================
-        OVERLAY SVG SOBRE O MAPA (via Leaflet)
-        ============================================ */
-        .quadra-poly {
-            fill: rgba(79, 172, 254, 0.08);
-            stroke: rgba(79, 172, 254, 0.3);
-            stroke-width: 1;
-            cursor: pointer;
-            transition: fill 0.2s;
-        }
-
-        .quadra-poly:hover {
-            fill: rgba(79, 172, 254, 0.18);
-        }
-
+        /* ===== RÓTULOS DAS QUADRAS   */
         .quadra-label {
-            font-size: 17px;
-            font-weight: 800;
-            fill: rgba(35, 7, 197, 0.95);
+            font-size: 12px;
+            font-weight: 900;
+            fill: #765cf8f2;
             text-anchor: middle;
             dominant-baseline: middle;
             pointer-events: none;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            text-shadow: 1px 1px 3px white
         }
-
-        .edge-guide {
-            stroke: rgba(255, 255, 255, 0.15);
-            stroke-width: 8;
-            fill: none;
-            pointer-events: stroke;
-            cursor: pointer;
+        
+        /* ===== NÚMEROS DOS TERRITÓRIOS (25px, azul marinho, sem sombra) ===== */
+        .territory-number-marker {
+            background: transparent;
+            border: none;
         }
-
-        .edge {
-            stroke: rgba(255, 255, 255, 0.5);
-            stroke-width: 2.5;
-            fill: none;
-            pointer-events: stroke;
-            cursor: pointer;
-            transition: stroke 0.2s, stroke-width 0.2s;
+        
+        .territory-number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #000080; /* Azul marinho */
+            text-shadow: none; /* Sem sombras */
+            text-align: center;
+            line-height: 1;
+            font-family: Arial, sans-serif;
         }
-
-        .edge:hover {
-            stroke: #4facfe;
-            stroke-width: 2;
-        }
-
-        .edge.marked {
-            stroke: #38ef7d;
-            stroke-width: 2;
-            filter: drop-shadow(0 0 4px rgba(56, 239, 125, 0.6));
-        }
-
+        
+        /* ===== VÉRTICES ===== */
         .vertex {
-            fill: #4facfe;
-            stroke: #fff;
-            stroke-width: 2;
             cursor: pointer;
-            transition: all 0.2s;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
         }
-
-        .vertex:hover {
-            fill: #fff;
-            stroke: #4facfe;
-            r: 10;
-        }
-
+        
         .vertex.selected {
-            fill: #ffd700;
-            stroke: #fff;
-            r: 10;
-            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
-        }
-
-        .vertex.pending {
-            fill: #ff6b6b;
-            stroke: #fff;
-            r: 10;
             animation: pulse 1s infinite;
         }
-
+        
         @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-
-        /* ============================================
-        PAINEL DE STATUS
-        ============================================ */
+        
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .faces-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .face-btn {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .face-btn:hover {
+            border-color: #667eea;
+        }
+        
+        .face-btn.marked {
+            background: #d4edda;
+            border-color: #27ae60;
+        }
+        
+        .face-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #999;
+            flex-shrink: 0;
+        }
+        
+        .face-btn.marked .face-indicator {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+        
+        /* ===== PAINEL DE STATUS ===== */
         .status-panel {
             position: fixed;
             bottom: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            padding: 12px 24px;
-            font-size: 14px;
-            color: #e0e0e0;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            pointer-events: none;
-            max-width: 90%;
-            text-align: center;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+            z-index: 9998;
         }
-
+        
         .status-panel.visible {
-            opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
-
-        .status-panel strong {
-            color: #4facfe;
-        }
-
-        /* ============================================
-   MODAL DE FACES
-   ============================================ */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            padding: 24px;
-            width: 90%;
-            max-width: 420px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-            transform: scale(0.9);
-            transition: transform 0.3s;
-        }
-
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-title {
-            font-size: 18px;
-            color: #fff;
-            margin: 0;
-        }
-
-        .modal-subtitle {
-            font-size: 13px;
-            color: #a0aec0;
-            margin-top: 4px;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: #a0aec0;
-            font-size: 28px;
-            line-height: 1;
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .faces-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .face-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #e0e0e0;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-        }
-
-        .face-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .face-btn.marked {
-            background: rgba(17, 153, 142, 0.2);
-            border-color: #11998e;
-            color: #38ef7d;
-        }
-
-        .face-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-
-        .face-btn.marked .face-indicator {
-            background: #38ef7d;
-            box-shadow: 0 0 6px rgba(56, 239, 125, 0.6);
-        }
-
-        /* ============================================
-   RESPONSIVO
-   ============================================ */
+        
+        /*  =========================
+            RESPONSIVO
+            ========================= */
         @media (max-width: 768px) {
             .top-bar {
                 padding: 8px 10px;
@@ -603,6 +605,7 @@
 
             .territory-controls label {
                 font-size: 12px;
+                color: #1865c9;
             }
 
             .modal-content {
@@ -630,117 +633,74 @@
             }
         }
 
-        /* Loading overlay */
+        /* ===== LOADING ===== */
         .loading-overlay {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
             justify-content: center;
-            z-index: 5000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s;
+            align-items: center;
+            z-index: 99999;
         }
-
+        
         .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
+            display: flex;
         }
-
+        
         .loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #4facfe;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
+        
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
+        
         .loading-text {
-            margin-top: 16px;
-            color: #a0aec0;
-            font-size: 14px;
-        }
-
-        /* Sync indicator */
-        .sync-indicator {
-            position: fixed;
-            top: 70px;
-            right: 16px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            z-index: 2000;
-            transition: all 0.3s;
-        }
-
-        .sync-indicator.online {
-            background: rgba(17, 153, 142, 0.2);
-            color: #38ef7d;
-            border: 1px solid rgba(17, 153, 142, 0.3);
-        }
-
-        .sync-indicator.offline {
-            background: rgba(255, 107, 107, 0.2);
-            color: #ff6b6b;
-            border: 1px solid rgba(255, 107, 107, 0.3);
-        }
-
-        .sync-indicator.syncing {
-            background: rgba(79, 172, 254, 0.2);
-            color: #4facfe;
-            border: 1px solid rgba(79, 172, 254, 0.3);
+            margin-top: 15px;
+            color: #333;
+            font-size: 16px;
         }
     </style>
-    <base target="_blank">
 </head>
-
 <body>
-
-    <!-- ============================================
-     TELA DE LOGIN
-     ============================================ -->
+    <!-- ===== TELA DE LOGIN ===== -->
     <div id="loginScreen">
         <div class="login-box">
             <span class="login-icon">🗺️</span>
             <h1>Bem-vindo(a) ao aplicativo de territórios!</h1>
-            <p class="subtitle">Sistema de Controle de Territórios v8.0</p>
+            <p class="subtitle">Sistema de Controle de Territórios v8.2</p>
             <input type="text" id="loginName" class="login-input" placeholder="Seu nome" autocomplete="off">
             <input type="password" id="loginPass" class="login-input" placeholder="Senha de acesso" autocomplete="off">
             <button class="login-btn" onclick="doLogin()">Entrar</button>
             <div class="login-error" id="loginError"></div>
         </div>
     </div>
-
-    <!-- ============================================
-     APP PRINCIPAL
-     ============================================ -->
+    
+    <!-- ===== APLICAÇÃO PRINCIPAL após titulo h1  -->
     <div id="appContainer">
-        <!-- Barra superior -->
+        <!-- CABEÇALHO - Barra superior -->
         <div class="top-bar">
             <div class="top-bar-header">
                 <h1>🗺️ Controle Territórios</h1>
                 <span class="user-badge" id="userBadge">Usuário</span>
+                <span class="sync-indicator offline" id="syncStatus">Offline</span>
             </div>
             <div class="controls">
                 <button class="btn btn-zoom" onclick="zoomIn()" title="Aumentar zoom">🔍+</button>
                 <button class="btn btn-zoom" onclick="zoomOut()" title="Diminuir zoom">🔍−</button>
                 <button class="btn" onclick="resetView()" title="Centralizar">📍</button>
                 <button class="btn btn-reset" onclick="resetMarks()" title="Limpar todas">🗑️</button>
-                <button class="btn" onclick="exportData()" title="Exportar">💾</button>
+                <!--<button class="btn" onclick="exportData()" title="Exportar">💾</button> -->
             </div>
             <div class="territory-controls">
                 <label for="territoryInput">Território:</label>
@@ -758,123 +718,174 @@
                 <button onclick="unmarkAllTerritoryEdges()" class="btn-action btn-unmark-all" title="Desmarcar tudo">❌
                     Desmarcar</button>
             </div>
-        </div>
-
-        <!-- Mapa Leaflet -->
+          
+        <!-- Mapa -->
         <div id="map"></div>
-
-        <!-- Indicador de sincronização -->
-        <div class="sync-indicator offline" id="syncIndicator">
-            <span id="syncDot">●</span>
-            <span id="syncText">Offline</span>
-        </div>
-
-        <!-- Painel de status -->
-        <div class="status-panel" id="statusPanel">
-            <span id="statusText">Toque em um vértice para começar</span>
-        </div>
-
-        <!-- Modal de faces -->
+    
+        <!-- ===== MODAL DE FACES ===== -->
         <div class="modal-overlay" id="modalOverlay">
-            <div class="modal-content">
+            <div class="modal">
                 <div class="modal-header">
                     <div>
-                        <h2 class="modal-title" id="modalTitle">Quadra E - Território 1</h2>
-                        <div class="modal-subtitle" id="modalSubtitle">Gerenciamento de faces</div>
+                        <h2 class="modal-title" id="modalTitle">Quadra</h2>
+                        <p style="color: #666; font-size: 14px;" id="modalSubtitle"></p>
                     </div>
                     <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
-                <div class="faces-grid" id="facesGrid"></div>
+                <div class="modal-body">
+                    <div class="faces-grid" id="facesGrid"></div>
+                </div>
             </div>
         </div>
-
-        <!-- Loading -->
+     
+        <!-- ===== LOADING ===== -->
         <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-spinner"></div>
-            <div class="loading-text" id="loadingText">Carregando mapa...</div>
+            <div>
+                <div class="loading-spinner"></div>
+                <div class="loading-text" id="loadingText">Carregando mapa...</div>
+            </div>
         </div>
     </div>
 
+    <!-- ===== PAINEL DE STATUS ===== -->
+    <div class="status-panel" id="statusPanel">
+        <span id="statusText"></span>
+    </div>
+    
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="config.js"></script>
-
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
     <script>
-        // Inicializa Firebase (v8 compat)
+
+        // ===============================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ===============================================
+        // Inicializa o Firebase com as configurações do config.js
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const dbRef = database.ref("territorios");
-
+        const dbRef = database.ref();
         console.log("✅ Firebase inicializado!");
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
         // LOGIN
-        // ═══════════════════════════════════════════════════════════════════
-        const LOGIN_PASSWORD = "terr654";
+        // =====================================================
+        const LOGIN_PASSWORD = "t4"; // Senha fixa (em produção, usar autenticação real)
         let currentUser = null;
-
+        
+        // Função de login
         function doLogin() {
             const name = document.getElementById('loginName').value.trim();
             const pass = document.getElementById('loginPass').value;
             const errorEl = document.getElementById('loginError');
-
+            
+            // Validações
             if (!name) {
                 errorEl.textContent = "Por favor, digite seu nome.";
+                errorEl.style.display = 'block';
                 return;
             }
+            
             if (pass !== LOGIN_PASSWORD) {
                 errorEl.textContent = "Senha incorreta. Tente novamente.";
+                errorEl.style.display = 'block';
                 document.getElementById('loginPass').value = '';
                 return;
             }
-
+            
+            // Login bem-sucedido
             currentUser = name;
             document.getElementById('userBadge').textContent = name;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appContainer').classList.add('active');
-
+            
             // Inicializa o app após login
             setTimeout(initApp, 500);
         }
-
-        // Enter no login
-        document.getElementById('loginPass').addEventListener('keypress', function (e) {
+        
+        // Enter no LOGIN
+        document.getElementById('loginPass').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') doLogin();
         });
-        document.getElementById('loginName').addEventListener('keypress', function (e) {
+        
+        document.getElementById('loginName').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') document.getElementById('loginPass').focus();
         });
-
-        // ═══════════════════════════════════════════════════════════════════
-        // DADOS DOS TERRITÓRIOS (COORDENADAS GEOGRÁFICAS LAT/LNG)
-        // ═══════════════════════════════════════════════════════════════════
-        // ⚠️ Substitua pelas coordenadas reais das quadras do seu território.
-        // Use https://www.openstreetmap.org para obter lat/lng dos vértices.
-
-        const territoriesData = {
-            1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(79,172,254,0.2)' },
-            2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(255,107,107,0.2)' },
-            3: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(56,239,125,0.2)' },
-            4: { quadras: ['A', 'B', 'C', 'D', 'E'], color: 'rgba(255,215,0,0.2)' },
-            5: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(168,85,247,0.2)' },
-            6: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(251,146,60,0.2)' },
-            7: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(236,72,153,0.2)' },
-            8: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'], color: 'rgba(34,211,238,0.2)' },
-            9: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'], color: 'rgba(132,204,22,0.2)' },
-            10: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(244,63,94,0.2)' },
-            11: { quadras: ['A', 'B', 'C', 'D', 'E', 'F'], color: 'rgba(99,102,241,0.2)' },
-            12: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: 'rgba(20,184,166,0.2)' },
-            13: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(245,158,11,0.2)' },
-            14: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(139,92,246,0.2)' },
-            15: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], color: 'rgba(14,165,233,0.2)' },
-            16: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G'], color: 'rgba(217,70,239,0.2)' }
+        
+        // =====================================================
+        // DEFINIÇÃO DE CORES DOS TERRITÓRIOS
+        // =====================================================
+        const COLORS = {
+            azulClaro: '#87CEEB',      // Cor de T1 (território 1)
+            verdeClaro: '#90EE90',     // Cor de T2 (território 2)
+            rosa: '#FFB6C1',           // Cor de T3 (território 3)
+            marromClaro: '#D2B48C',    // Cor de T4 (território 4)
+            lilaz: '#d963dd',
+            amarelo: '#F0E68C',
+            azulEscuro: '#2b1691', 
+            vermelho: '#EB6848',
+            marromClaro: '#60580F',
+            roxo: '#471691',
+            azul: '#94edf9',
+            rosa: '#F866F3',
+            verde: '#2D9727',
+            cinza: '#17515A',
+            marrom: '#4F440c0b',
+            // Cores padrão para territórios 5-16 (caso existam)
+            padrao: ['#E6E6FA', '#F0E68C', '#FFE4B5', '#DDA0DD', '#60580F',
+                     '#B0E0E6', '#FFB6C1', '#90EE90', '#87CEEB', '#d963dd']
         };
 
-        // Coordenadas de exemplo (São Paulo - Jardim das Oliveiras)
-        // FORMATO: [lat, lng] — latitude primeiro, longitude depois, coordenadas reais!
+        // Mapeia território para cor
+        function getTerritoryColor(t) {
+            const colorMap = {
+                1: COLORS.azulClaro,
+                2: COLORS.vermelho,
+                3: COLORS.cinza,
+                4: COLORS.lilaz,
+                5: COLORS.verde,
+                7: COLORS.lilaz,
+                8: COLORS.verdeClaro,
+                9: COLORS.azulEscuro,
+                10: COLORS.amarelo,
+                11: COLORS.azulClaro,
+                12: COLORS.rosa,
+                13: COLORS.roxo,
+                14: COLORS.marromClaro,
+                15: COLORS.marrom,
+                16: COLORS.rosa,
+            };
+            return colorMap[t] || COLORS.padrao[(t - 5) % COLORS.padrao.length];
+        }
+        
+        // =====================================================
+        // DADOS DOS TERRITÓRIOS E QUADRAS , color: 'rgba(217,70,239,0.2)' 
+        // =====================================================
+        const territoriesData = {
+            1: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            2: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            3: { quadras: ['A', 'B', 'C', 'D', 'E', 'F']},
+            4: { quadras: ['A', 'B', 'C', 'D', 'E']},
+            5: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            6: { quadras: ['A', 'B', 'C', 'D', 'E', 'F']},
+            7: { quadras: ['A', 'B', 'C', 'D', 'E', 'F']},
+            8: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']},
+            9: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']},
+            10: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            11: { quadras: ['A', 'B', 'C', 'D', 'E', 'F']},
+            12: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']},
+            13: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            14: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']},
+            15: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']},
+            16: { quadras: ['A', 'B', 'C', 'D', 'E', 'F', 'G']}
+        };
+        
+        // =====================================================
+        // COORDENADAS DOS VÉRTICES DAS QUADRAS-Substitua pelas coordenadas reais
+        // =====================================================
         const quadVertices = {
-            // === TERRITÓRIO 1 Novos vertices do OpenStreetMap.org   ===
+            // TERRITÓRIO 1  ===
             "T1_QA": [[-23.540719, -46.511972], [-23.542951, -46.508796], [-23.543384, -46.509300], [-23.541102, -46.512369]],
             "T1_QB": [[-23.541397, -46.510717], [-23.541161, -46.510448], [-23.541791, -46.509504], [-23.542548, -46.509064]],
             "T1_QC": [[-23.540433, -46.508882], [-23.541378, -46.509848], [-23.541014, -46.510309], [-23.540010, -46.509333], [-23.540010, -46.509022]],
@@ -886,8 +897,9 @@
             // === TERRITÓRIO 2 ===
             "T2_QA": [[-23.540688, -46.507476], [-23.540545, -46.507025], [-23.541116, -46.506661], [-23.541485, -46.507187]],
             "T2_QB": [[-23.541096, -46.506468], [-23.541362, -46.506162], [-23.542207, -46.506962], [-23.541657, -46.507171]],
-            "T2_QC": [[-23.539833, -46.507305], [-23.539538, -46.506919], [-23.540845, -46.505878], [-23.540983, -46.505996], [-23.540993, -46.505696], [-23.541308, -46.505427], [-23.542763, -46.506704], [-23.542340, -46.506833], [-23.541337, -46.505975], [-23.540949, -46.506393], [-23.541012, -46.506570]],
-            "T2_QD": [[-23.539439, -46.506736], [-23.539105, -46.506361], [-23.539813, -46.505696], [-23.540167, -46.506146]],
+            "T2_QC": [[-23.539497, -46.506929], [-23.540029, -46.506394], [-23.540627, -46.506071], [-23.540726, -46.506232], [-23.541040, -46.505953], [-23.540922, -46.505696], 
+            [-23.541276, -46.505374], [-23.542741, -46.506683], [-23.542338, -46.506876], [-23.541296, -46.506007], [-23.540962, -46.506296], [-23.540972, -46.506565], [-23.539841, -46.507283]],
+            "T2_QD": [[-23.539059, -46.506409], [-23.539831, -46.505631], [-23.540229, -46.506162], [-23.539910, -46.506382], [-23.539423, -46.506817]],
             "T2_QE": [[-23.539577, -46.504059], [-23.540722, -46.505706], [-23.540349, -46.506098], [-23.539901, -46.505540], [-23.540044, -46.505277], [-23.538997, -46.506221], [-23.538800, -46.506082]],
             "T2_QF": [[-23.540840, -46.505594], [-23.540137, -46.504628], [-23.540501, -46.504333], [-23.541189, -46.505250]],
             "T2_QG": [[-23.539631, -46.503941], [-23.539793, -46.503426], [-23.540427, -46.504231], [-23.540103, -46.504548]],
@@ -898,33 +910,33 @@
             "T3_QC": [[-23.537733, -46.504204], [-23.537389, -46.503394], [-23.537851, -46.502987], [-23.538230, -46.503496], [-23.538269, -46.504220]],
             "T3_QD": [[-23.537940, -46.502917], [-23.538289, -46.502590], [-23.538893, -46.503147], [-23.539415, -46.503904], [-23.539356, -46.504253], [-23.539100, -46.504435]],
             "T3_QE": [[-23.537728, -46.502901], [-23.537281, -46.503308], [-23.536809, -46.502590], [-23.537270, -46.502139]],  
-            "T3_QF": [[-23.538199, -46.502466], [-23.537850, -46.502820], [-23.537354, -46.502080], [-23.537241, -46.501839], [-23.537132, -46.502064], [-23.536724, -46.502488], [-23.536444, -46.502075], [-23.537245, -46.501254]],
+            "T3_QF": [[-23.536409, -46.502080], [-23.537266, -46.501265], [-23.538170, -46.502466], [-23.537846, -46.502734], [-23.537216, -46.501865], [-23.536715, -46.502455]],
 
-            // === TERRITÓRIO 4 (Rosa Salmão, superior direito) ===
-            "T4_QA": [[-23.536697, -46.500741], [-23.536372, -46.501878], [-23.536077, -46.501630], [-23.535969, -46.500890], [-23.536195, -46.500075]],
+            // === TERRITÓRIO 4 (Rosa Salmão) ===
+            "T4_QA": [[-23.535908, -46.500900], [-23.536178, -46.500009], [-23.536709, -46.500728], [-23.536508, -46.501458], [-23.536336, -46.501957], [-23.536051, -46.501613], [-23.536110, -46.501313]],
             "T4_QB": [[-23.536284, -46.499098], [-23.535821, -46.500643], [-23.535290, -46.499935]],
             "T4_QC": [[-23.536441, -46.498701], [-23.535172, -46.499721], [-23.534750, -46.499592], [-23.536569, -46.498079]],
             "T4_QD": [[-23.536588, -46.498787], [-23.537365, -46.498369], [-23.536756, -46.500493], [-23.536284, -46.499860]],
             "T4_QE": [[-23.537228, -46.499484], [-23.537857, -46.499184], [-23.537346, -46.500858], [-23.536608, -46.501620]],
 
-            // === TERRITÓRIO 5 (Verde escuro, superior direito) ===
+            // === TERRITÓRIO 5 (Verde escuro) ===
             "T5_QA": [[-23.531908, -46.501244], [-23.532564, -46.500063], [-23.532249, -46.501147]],
             "T5_QB": [[-23.533409, -46.498475], [-23.533734, -46.498432], [-23.533183, -46.500428], [-23.532485, -46.501029], [-23.533114, -46.499001]],
             "T5_QC": [[-23.533468, -46.500192], [-23.533970, -46.498411], [-23.534560, -46.498282], [-23.534176, -46.499559]],
-            "T5_QD": [[-23.534471, -46.499355], [-23.534757, -46.498314], [-23.535642, -46.498142]],
-            "T5_QE": [[-23.533626, -46.498153], [-23.534058, -46.497681], [-23.534776, -46.497563], [-23.534609, -46.498046]],
+            "T5_QD": [[-23.534425, -46.499399], [-23.534710, -46.498262], [-23.535693, -46.498079], [-23.535536, -46.498486]],
+            "T5_QE": [[-23.533559, -46.498250], [-23.533990, -46.497660], [-23.534787, -46.497520], [-23.534590, -46.498121]],
             "T5_QF": [[-23.534855, -46.498003], [-23.535042, -46.497509], [-23.535897, -46.497370], [-23.535779, -46.497864]],
             "T5_QG": [[-23.536114, -46.497939], [-23.536261, -46.497295], [-23.537176, -46.497134], [-23.537077, -46.497359]],
             
-            // === TERRITÓRIO 6 (Lilaz, centro esquerdo)  ===
-            "T6_QA": [[-23.544219, -46.507959], [-23.543688, -46.507584], [-23.542714, -46.506479], [-23.542842, -46.506307], [-23.543737, -46.507348], [-23.544327, -46.507809]],
+            // === TERRITÓRIO 6 (Lilaz)  ===
+            "T6_QA": [[-23.542693, -46.506463], [-23.542835, -46.506275], [-23.543882, -46.507460], [-23.544364, -46.507798], [-23.544266, -46.507997], [-23.543695, -46.507584]],
             "T6_QB": [[-23.542911, -46.506211], [-23.543029, -46.506050], [-23.544032, -46.507155], [-23.544484, -46.507487], [-23.544366, -46.507659], [-23.543865, -46.507305]],
-            "T6_QC": [[-23.541564, -46.505427], [-23.541731, -46.505331], [-23.542596, -46.506060], [-23.542370, -46.506211]],
+            "T6_QC": [[-23.541578, -46.505449], [-23.541755, -46.505299], [-23.542748, -46.506194], [-23.542610, -46.506388]],
             "T6_QD": [[-23.542753, -46.503984], [-23.543063, -46.504375], [-23.542694, -46.504734], [-23.542478, -46.504616], [-23.543329, -46.505448], [-23.543034, -46.505834], [-23.542050, -46.505040], [-23.542940, -46.505936], [-23.542822, -46.506118], [-23.541633, -46.505062]],
             "T6_QE": [[-23.543128, -46.505899], [-23.543393, -46.505578], [-23.544013, -46.506296], [-23.543570, -46.506447]],
             "T6_QF": [[-23.542862, -46.504805], [-23.543137, -46.504569], [-23.544199, -46.505524], [-23.543786, -46.505706]],
 
-            // === TERRITÓRIO 7 (Bege, meio esquerdo) ===
+            // === TERRITÓRIO 7 (Bege) ===
             "T7_QA": [[-23.545198, -46.505019], [-23.545744, -46.505330], [-23.544598, -46.507422], [-23.543698, -46.506613], [-23.544893, -46.506082]],
             "T7_QB": [[-23.544204, -46.506270], [-23.543900, -46.505873], [-23.544332, -46.505615], [-23.544676, -46.504757], [-23.545075, -46.504945], [-23.544745, -46.506012]],
             "T7_QC": [[-23.545542, -46.504236], [-23.546132, -46.504601], [-23.545778, -46.505250], [-23.545252, -46.504934]],
@@ -933,18 +945,18 @@
             "T7_QF": [[-23.542808, -46.502595], [-23.544470, -46.504832], [-23.544293, -46.505352], [-23.543196, -46.504365], [-23.542223, -46.503072]],
 
             
-            // === TERRITÓRIO 8 (Verde claro, centro meio) ===
+            // === TERRITÓRIO 8 (Verde claro) ===
             "T8_QA": [[-23.540625, -46.503357], [-23.541077, -46.503974], [-23.540679, -46.504360], [-23.540212, -46.503716]],
             "T8_QB": [[-23.540133, -46.503673], [-23.539872, -46.503303], [-23.540103, -46.502649], [-23.540546, -46.503287]],
-            "T8_QC": [[-23.540373, -46.501887],[-23.540934, -46.502659], [-23.540560, -46.503019], [-23.540137, -46.502498]],
+            "T8_QC": [[-23.540373, -46.501887], [-23.540934, -46.502659], [-23.540560, -46.503019], [-23.540137, -46.502498]],
             "T8_QD": [[-23.540624, -46.503142], [-23.541022, -46.502756], [-23.541568, -46.503502], [-23.541189, -46.503882]],
             "T8_QE": [[-23.541288, -46.503995], [-23.541661, -46.503620], [-23.542173, -46.504333], [-23.541809, -46.504692]],
             "T8_QF": [[-23.542148, -46.503174], [-23.542684, -46.503861], [-23.542291, -46.504210], [-23.541770, -46.503512]],
-            "T8_QG": [[-23.541712, -46.503378],[-23.541201, -46.502670], [-23.541486, -46.502369], [-23.542036, -46.503045]],
+            "T8_QG": [[-23.541712, -46.503378], [-23.541201, -46.502670], [-23.541486, -46.502369], [-23.542036, -46.503045]],
             "T8_QH": [[-23.540689, -46.501210], [-23.541378, -46.502175], [-23.541033, -46.502487], [-23.540473, -46.501757]],
             "T8_QI": [[-23.541161, -46.500502], [-23.542656, -46.502497], [-23.542154, -46.502862], [-23.540778, -46.500952]],
 
-            // === TERRITÓRIO 9 (Azul escuro, centro meio) ===
+            // === TERRITÓRIO 9 (Azul escuro) ===
             "T9_QA": [[-23.539625, -46.503410], [-23.539434, -46.503153], [-23.539660, -46.502531], [-23.539901, -46.502654]],
             "T9_QB": [[-23.539507, -46.503786], [-23.538996, -46.503094], [-23.539237, -46.502337], [-23.539522, -46.502455], [-23.539325, -46.503088], [-23.539571, -46.503539]],
             "T9_QC": [[-23.539291, -46.502252], [-23.539532, -46.501426], [-23.540225, -46.501753], [-23.539970, -46.502547], [-23.539679, -46.502439], [-23.539847, -46.501785], [-23.539591, -46.502359]],
@@ -954,10 +966,10 @@
             "T9_QG": [[-23.537580, -46.500648], [-23.537841, -46.499789], [-23.538283, -46.499923], [-23.538086, -46.500798]],
             "T9_QH": [[-23.537462, -46.500921], [-23.537531, -46.500787], [-23.538652, -46.501173], [-23.538318, -46.501549]],
             "T9_QI": [[-23.538804, -46.501978], [-23.538460, -46.501597], [-23.538790, -46.501216], [-23.539301, -46.501420]],
-            "T9_QJ": [[-23.538032, -46.502048], [-23.538352, -46.501683], [-23.538588, -46.501946], [-23.538362, -46.502466]],
-            "T9_QK": [[-23.537334, -46.501130], [-23.537418, -46.501002], [-23.538141, -46.501635], [-23.537929, -46.501951]],
+            "T9_QJ": [[-23.538352, -46.502488], [-23.538018, -46.502048], [-23.538362, -46.501678], [-23.538740, -46.502064]],
+            "T9_QK": [[-23.537944, -46.501952], [-23.537315, -46.501136], [-23.537403, -46.501007], [-23.538047, -46.501431], [-23.538249, -46.501651]],
 
-            // === TERRITÓRIO 10 (Cinza claro, centro) ===
+            // === TERRITÓRIO 10 (Cinza claro) ===
             "T10_QA": [[-23.540584, -46.500835], [-23.540328, -46.500471], [-23.541061, -46.499666], [-23.541326, -46.499950]],
             "T10_QB": [[-23.539635, -46.500240], [-23.540048, -46.499805], [-23.540574, -46.499988], [-23.540117, -46.500460]],
             "T10_QC": [[-23.538514, -46.499864], [-23.538667, -46.499333], [-23.539837, -46.499763], [-23.539468, -46.500170]],
@@ -966,7 +978,7 @@
             "T10_QF": [[-23.538691, -46.499189], [-23.538873, -46.498550], [-23.540461, -46.499135], [-23.540019, -46.499645]],
             "T10_QG": [[-23.540166, -46.499693], [-23.540776, -46.498990], [-23.541007, -46.499521], [-23.540687, -46.499891]],
 
-            // === TERRITÓRIO 11 (Azul claro, centro) ===
+            // === TERRITÓRIO 11 (Azul claro) ===
             "T11_QA": [[-23.537261, -46.499280], [-23.537590, -46.498228], [-23.538278, -46.497826], [-23.537929, -46.498910]],
             "T11_QB": [[-23.536641, -46.498593], [-23.536842, -46.497847], [-23.537698, -46.497354], [-23.537462, -46.498132]],
             "T11_QC": [[-23.537599, -46.498078], [-23.537845, -46.497268], [-23.538548, -46.496855], [-23.538322, -46.497649]],
@@ -974,7 +986,7 @@
             "T11_QE": [[-23.538150, -46.498781], [-23.538455, -46.497746], [-23.540196, -46.496775], [-23.540466, -46.497445]],
             "T11_QF": [[-23.539031, -46.498459], [-23.540230, -46.497751], [-23.540442, -46.498234], [-23.539640, -46.498684]],
 
-            // === TERRITÓRIO 12 (Lilaz, MEIO DIREITO) ===
+            // === TERRITÓRIO 12 (Lilaz) ===
             "T12_QA": [[-23.536116, -46.496586], [-23.535959, -46.497166], [-23.534189, -46.497455], [-23.534797, -46.496866]],
             "T12_QB": [[-23.536321, -46.495911], [-23.536193, -46.496372], [-23.534944, -46.496651], [-23.535259, -46.496050]],
             "T12_QC": [[-23.536498, -46.495106], [-23.536331, -46.495707], [-23.535347, -46.495814], [-23.535554, -46.495235]],
@@ -984,7 +996,7 @@
             "T12_QG": [[-23.536596, -46.496308], [-23.536734, -46.495857], [-23.537648, -46.495653], [-23.537501, -46.496147]],
             "T12_QH": [[-23.536390, -46.497059], [-23.536586, -46.496501], [-23.537422, -46.496404], [-23.537245, -46.496898]],
 
-            // === TERRITÓRIO 13 (Roxo, CANTO INFERIOR ESQUERDO) ===
+            // === TERRITÓRIO 13 (Roxo) ===
             "T13_QA": [[-23.541407, -46.499815], [-23.541220, -46.499547], [-23.540414, -46.497690], [-23.540640, -46.497433], [-23.540345, -46.496789], [-23.540562, -46.496618], [-23.541338, -46.498463], [-23.541142, -46.498817], [-23.542322, -46.497723], [-23.542607, -46.497830], [-23.542400, -46.498720]],
             "T13_QB": [[-23.541515, -46.498195], [-23.541220, -46.497540], [-23.542695, -46.496285], [-23.542420, -46.497057]],
             "T13_QC": [[-23.541112, -46.497347], [-23.540916, -46.496811], [-23.542853, -46.495073], [-23.542744, -46.495899]],
@@ -993,7 +1005,7 @@
             "T13_QF": [[-23.541337, -46.495106], [-23.540049, -46.496200], [-23.539966, -46.495942], [-23.540531, -46.495320], [-23.541357, -46.493024], [-23.541784, -46.493298]],
             "T13_QG": [[-23.541494, -46.494971], [-23.541971, -46.493335], [-23.542590, -46.493614], [-23.542733, -46.493893]],
 
-            // === TERRITÓRIO 14 (Marrom, CENTRO INFERIOR) ===
+            // === TERRITÓRIO 14 (Marrom) ===
             "T14_QA": [[-23.537442, -46.497122], [-23.537854, -46.495761], [-23.538188, -46.496265], [-23.538051, -46.496726]],
             "T14_QB": [[-23.537952, -46.495503], [-23.538129, -46.494902], [-23.538552, -46.495503], [-23.538345, -46.496104]],
             "T14_QC": [[-23.538228, -46.494645], [-23.538483, -46.493851], [-23.539093, -46.493829], [-23.538621, -46.495278]],
@@ -1002,18 +1014,18 @@
             "T14_QF": [[-23.539443, -46.496045], [-23.539703, -46.495278], [-23.540480, -46.495085], [-23.539866, -46.495825]],
             "T14_QG": [[-23.539772, -46.495112], [-23.540229, -46.493851], [-23.540888, -46.493899], [-23.540544, -46.494892 ]],
 
-            // === TERRITÓRIO 15 (Mostarda, INFERIOR DIREITO) ===
-            "T15_QA": [[-23.536274, -46.493305], [-23.537059, -46.493176], [-23.536961, -46.493551], [-23.535909, -46.493679]],
-            "T15_QB": [[-23.536135, -46.492445], [-23.537177, -46.492263], [-23.537108, -46.492907], [-23.536056, -46.493057]],
-            "T15_QC": [[-23.536095, -46.491587], [-23.537236, -46.491416], [-23.537187, -46.492049], [-23.536056, -46.492145]],
+            // === TERRITÓRIO 15 (Mostarda) ===
+            "T15_QA": [[-23.537000, -46.493583], [-23.536282, -46.493728], [-23.536228, -46.493272], [-23.537138, -46.493116]],
+            "T15_QB": [[-23.536173, -46.493100], [-23.536173, -46.492435], [-23.537186, -46.492263], [ -23.537137,-46.492918]],
+            "T15_QC": [[-23.536223, -46.492263], [-23.536144, -46.491534], [-23.537339, -46.491335], [-23.537265, -46.492081]],
             "T15_QD": [[-23.536253, -46.490579], [-23.537315, -46.490546], [-23.537275, -46.491179], [-23.536164, -46.491319]],
             "T15_QE": [[-23.537678, -46.491061], [-23.537718, -46.490557], [-23.538494, -46.490589], [-23.538494, -46.490922]],
             "T15_QF": [[-23.537590, -46.491973], [-23.537659, -46.491351], [-23.538494, -46.491201], [-23.538455, -46.491780]],
             "T15_QG": [[-23.537491, -46.492832], [-23.537580, -46.492231], [-23.538416, -46.492016], [-23.538396, -46.492649]],
             "T15_QH": [[-23.537295, -46.493808], [-23.537472, -46.493111], [-23.538337, -46.492939], [-23.538298, -46.493636]],
 
-            // === TERRITÓRIO 16 (Bege rosado, INFERIOR DIREITO) ===
-            "T16_QA": [[-23.540382, -46.493658], [-23.540716, -46.492735], [-23.541168, -46.492993], [-23.540932, -46.493711]],
+            // === TERRITÓRIO 16 (Bege rosado) ===
+            "T16_QA": [[-23.540259, -46.493722], [-23.540633, -46.492660], [-23.541252, -46.492971], [-23.540952, -46.493765]],
             "T16_QB": [[-23.539458, -46.493604], [-23.539880, -46.492403], [-23.540476, -46.492665], [-23.540137, -46.493652]],
             "T16_QC": [[-23.538574, -46.492773], [-23.538623, -46.491984], [-23.538957, -46.491925], [-23.539709, -46.492279], [-23.539237, -46.493545]],
             "T16_QD": [[-23.538647, -46.491576], [-23.538677, -46.491153], [-23.538942, -46.491201], [-23.538687, -46.491013], [-23.538726, -46.490563], [-23.539773, -46.491029], [-23.539758, -46.492108]],
@@ -1022,72 +1034,101 @@
             "T16_QG": [[-23.542015, -46.493207], [-23.542226, -46.492633], [-23.543165, -46.493341], [-23.543175, -46.493545], [-23.542846, -46.493803], [-23.542605, -46.493497]]
         };
 
-
-        // Centro do mapa (ajuste para sua região)
-        const MAP_CENTER = [-23.541500, -46.509500];
-        const MAP_ZOOM = 16;
-
-        // ═══════════════════════════════════════════════════════════════════
-        // ESTADO GLOBAL
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
+        // CONFIGURAÇÃO DO MAPA  [-23.540000, -46.508000]; // Centro inicial do mapa
+        // =====================================================
+        const MAP_CENTER = [-23.541077, -46.503974];
+        const MAP_ZOOM = 17; // Nível de zoom inicial
+        
+        // =====================================================
+        // ESTADO GLOBAL DA APLICAÇÃO
+        // =====================================================
         let appState = {
-            marks: {},
-            selectedVertex: null,
-            isSyncing: false,
-            map: null,
-            svgLayer: null,
-            overlayGroup: null
+            marks: {},              // Arestas marcadas (ex: {"T1_QA_E0": true})
+            selectedVertex: null,   // Vértice atualmente selecionado
+            isSyncing: false,       // Flag para evitar loops de sincronização
+            map: null,              // Instância do mapa Leaflet
+            overlayGroup: null      // Grupo de camadas para os polígonos
         };
-
-        // ═══════════════════════════════════════════════════════════════════
-        // INICIALIZAÇÃO DO APP
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
+        // INICIALIZAÇÃO DA APLICAÇÃO
+        // =====================================================
         function initApp() {
             showLoading("Carregando mapa...");
-
+            
             // Inicializa o mapa Leaflet
             appState.map = L.map('map', {
                 zoomControl: false,
                 attributionControl: true
             }).setView(MAP_CENTER, MAP_ZOOM);
-
+            
             // Adiciona camada do OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 20,
                 minZoom: 3
             }).addTo(appState.map);
-
-            // Adiciona controle de zoom customizado (direita)
-            L.control.zoom({ position: 'topright' }).addTo(appState.map);
-
-            // Cria camada SVG para overlays
+            
+            // Cria grupo para as camadas de overlay
             appState.overlayGroup = L.layerGroup().addTo(appState.map);
-
-            // Renderiza os polígonos das quadras
-            renderQuadras();
-
+            
             // Configura listener do Firebase
             setupFirebaseListener();
-
-            // Configura cliques no mapa
+            
+            // Configura interações do mapa
             setupMapInteractions();
-
-            // Inicializa controles
-            document.getElementById('territoryInput').value = '1';
-            updateArrowButtons(1);
-
+            
+            // Restaura posição salva (se existir)
+            restoreMapPosition();
+            
             hideLoading();
-            showStatus('Mapa carregado! Toque em um vértice para começar');
-        }
+            showStatus('✅ Atenção! Marque as arestas das quadras trabalhadas.');
 
-        // ═══════════════════════════════════════════════════════════════════
+            // PASSO 1: Criar pontos para colocar letra em quadras irregulares
+            const letterPoints = {
+                "C": [-23.542226, -46.506479],  //2C
+                "B": [-23.541553, -46.510148],  //1B
+                "C.": [-23.542586, -46.506158],  //6C
+                "F": [-23.537886, -46.502285],  //3F
+                "A": [-23.542055, -46.498647],  //13A
+                "D": [-23.534866, -46.498700]   //5D
+            };
+            // ============================================
+            // PASSO 2: Criar função para ícone customizado
+            // ============================================
+            function createLetterIcon(letter) {
+                return L.divIcon({
+                    className: 'letter-marker',  // Classe CSS para estilizar color: #ff0000 vermelho
+                    html: `<div style="font-size: 12px; font-weight: bold; color: #27070a ; text-shadow: 1px 1px 2px white;">${letter}</div>`,
+                    iconSize: [24, 24],          // Tamanho do marcador
+                    iconAnchor: [12, 12]         // Ponto de âncora centralizado
+                });
+            };
+
+            // ============================================
+            // PASSO 3: Adicionar marcadores no mapa
+            // ============================================
+            Object.keys(letterPoints).forEach(function(letter) {
+                var coords = letterPoints[letter];
+                var marker = L.marker(coords, { 
+                    icon: createLetterIcon(letter),
+                    clickable: true  // Permite clicar se quiser adicionar eventos depois
+                });
+                
+                // IMPORTANTE: Use appState.map (não "map") pois é assim que você declarou
+                marker.addTo(appState.map);
+            });
+        }
+        
+        // =====================================================
         // FIREBASE - LISTENER EM TEMPO REAL
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
         function setupFirebaseListener() {
             updateSyncStatus('syncing', 'Sincronizando...');
-
-            dbRef.child("marks").on("value", function (snapshot) {
+            
+            // Escuta mudanças nas marcações
+            dbRef.child("marks").on("value", function(snapshot) {
                 const data = snapshot.val();
                 if (data) {
                     appState.isSyncing = true;
@@ -1098,14 +1139,14 @@
                 } else {
                     updateSyncStatus('online', 'Sincronizado');
                 }
-            }, function (error) {
+            }, function(error) {
                 console.error("Erro Firebase:", error);
                 updateSyncStatus('offline', 'Erro de conexão');
             });
-
+            
             // Monitora estado da conexão
             const connectedRef = database.ref(".info/connected");
-            connectedRef.on("value", function (snap) {
+            connectedRef.on("value", function(snap) {
                 if (snap.val() === true) {
                     updateSyncStatus('online', 'Online');
                 } else {
@@ -1113,108 +1154,106 @@
                 }
             });
         }
-
-        function updateSyncStatus(status, text) {
-            const indicator = document.getElementById('syncIndicator');
-            const dot = document.getElementById('syncDot');
-            const txt = document.getElementById('syncText');
-
-            indicator.className = 'sync-indicator ' + status;
-            txt.textContent = text;
-
-            if (status === 'online') dot.textContent = '●';
-            else if (status === 'offline') dot.textContent = '○';
-            else dot.textContent = '◐';
-        }
-
-        // ═══════════════════════════════════════════════════════════════════
-        // SALVAR ESTADO (Firebase + localStorage backup)
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
+        // SALVAR ESTADO NO FIREBASE
+        // =====================================================
         function saveState() {
-            // Salva zoom/pan no localStorage (pessoal)
-            try {
-                if (appState.map) {
-                    const center = appState.map.getCenter();
-                    const zoom = appState.map.getZoom();
-                    localStorage.setItem('mapCenter', JSON.stringify([center.lat, center.lng]));
-                    localStorage.setItem('mapZoom', zoom);
-                }
-            } catch (e) {
-                console.warn('Erro ao salvar local:', e);
-            }
-
-            // Salva marcações no Firebase (compartilhado)
-            if (!appState.isSyncing) {
-                updateSyncStatus('syncing', 'Salvando...');
-                dbRef.child("marks").set(appState.marks)
-                    .then(() => {
-                        console.log("✅ Dados salvos na nuvem!");
-                        updateSyncStatus('online', 'Sincronizado');
-                    })
-                    .catch((error) => {
-                        console.error("❌ Erro ao salvar:", error);
-                        updateSyncStatus('offline', 'Falha ao salvar');
-                    });
-            }
+            if (appState.isSyncing) return; // Evita loops
+            
+            dbRef.child("marks").set(appState.marks)
+                .then(() => console.log("✅ Dados salvos no Firebase"))
+                .catch(err => console.error("❌ Erro ao salvar:", err));
         }
-
-        // ═══════════════════════════════════════════════════════════════════
-        // RENDERIZAR QUADRAS NO MAPA (Leaflet SVG)
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
+        // CALCULAR CENTRO DE UM TERRITÓRIO
+        // =====================================================
+        function calculateTerritoryCenter(t) {
+            const data = territoriesData[t];
+            if (!data) return null;
+            
+            let sumLat = 0, sumLng = 0, count = 0;
+            
+            // Percorre todas as quadras do território
+            data.quadras.forEach(quadra => {
+                const qId = `T${t}_Q${quadra}`;
+                const verts = quadVertices[qId];
+                if (verts) {
+                    verts.forEach(v => {
+                        sumLat += v[0];
+                        sumLng += v[1];
+                        count++;
+                    });
+                }
+            });
+            
+            if (count === 0) return null;
+            
+            // Retorna a média das coordenadas
+            return [sumLat / count, sumLng / count];
+        }
+        
+        // =====================================================
+        // RENDERIZAR QUADRAS NO MAPA
+        // =====================================================
         function renderQuadras() {
             // Limpa camada anterior
             if (appState.overlayGroup) {
                 appState.overlayGroup.clearLayers();
             }
-
+            
             // Mapa para evitar vértices duplicados
-            const vertexMap = new Map(); // key: "lat,lng" -> {id, lat, lng, edges: []}
-
+            const vertexMap = new Map(); // key: "lat,lng" -> {id, lat, lng, edges:[]}
+            
             // Renderiza polígonos e arestas
             for (let t = 1; t <= 16; t++) {
                 const data = territoriesData[t];
                 if (!data) continue;
-
+                
+                // Obtém a cor do território
+                const territoryColor = getTerritoryColor(t);
+                
                 data.quadras.forEach(quadra => {
                     const qId = `T${t}_Q${quadra}`;
                     const verts = quadVertices[qId];
                     if (!verts) return;
-
-                    // Polígono da quadra
+                    
+                    // ===== POLÍGONO DA QUADRA (COM COR DO TERRITÓRIO) =====
                     const poly = L.polygon(verts, {
-                        color: data.color.replace('0.2', '0.4'),
-                        fillColor: data.color,
-                        fillOpacity: 0.3,
-                        weight: 1,
-                        className: 'quadra-poly'
+                        color: '#666',           // Cor da borda
+                        fillColor: territoryColor, // Cor de preenchimento (do território)
+                        fillOpacity: 0.4,        // Opacidade do preenchimento
+                        weight: 1,               // Espessura da borda
+                        className: 'quadra-polygon'
                     }).addTo(appState.overlayGroup);
-
+                    
                     // Clique na quadra abre modal
-                    poly.on('click', function (e) {
+                    poly.on('click', function(e) {
                         L.DomEvent.stopPropagation(e);
                         handleQuadraClick(qId, t, quadra);
                     });
-
-                    // Label no centro
+                    
+                    // ===== RÓTULO DA QUADRA (LETRA) =====
                     const center = poly.getBounds().getCenter();
                     const label = L.marker(center, {
                         icon: L.divIcon({
                             className: 'quadra-label-marker',
-                            html: `<span class="quadra-label">${quadra}</span>`,
-                            iconSize: [60, 50],  //[30, 20],
+                            html: `<div class="quadra-label">${quadra}</div>`,
+                            iconSize: [20, 10],
                             iconAnchor: [15, 10]
                         }),
                         interactive: false
                     }).addTo(appState.overlayGroup);
-
-                    // Arestas
+                    
+                    // ===== ARESTAS =====
                     for (let i = 0; i < verts.length; i++) {
                         const j = (i + 1) % verts.length;
                         const v1 = verts[i];
                         const v2 = verts[j];
                         const edgeId = `${qId}_E${i}`;
                         const isMarked = appState.marks[edgeId] || false;
-
+                        
                         // Linha da aresta
                         const edgeLine = L.polyline([v1, v2], {
                             color: isMarked ? '#38ef7d' : 'rgba(255,255,255,0.6)',
@@ -1222,27 +1261,28 @@
                             opacity: isMarked ? 1 : 0.8,
                             className: isMarked ? 'edge marked' : 'edge'
                         }).addTo(appState.overlayGroup);
-
-                        edgeLine.on('click', function (e) {
+                        
+                        edgeLine.on('click', function(e) {
                             L.DomEvent.stopPropagation(e);
                             handleEdgeClick(edgeId);
                         });
-
+                        
                         // Área de toque maior (linha invisível)
                         const touchLine = L.polyline([v1, v2], {
                             color: 'transparent',
                             weight: 20,
                             opacity: 0
                         }).addTo(appState.overlayGroup);
-                        touchLine.on('click', function (e) {
+                        
+                        touchLine.on('click', function(e) {
                             L.DomEvent.stopPropagation(e);
                             handleEdgeClick(edgeId);
                         });
-
-                        // Coleta vértices
+                        
+                        // Coleta vértices para renderização posterior
                         const key1 = `${v1[0]},${v1[1]}`;
                         const prevEdgeId = `${qId}_E${(i - 1 + verts.length) % verts.length}`;
-
+                        
                         if (!vertexMap.has(key1)) {
                             vertexMap.set(key1, {
                                 id: `V_${key1}`,
@@ -1257,14 +1297,28 @@
                         }
                     }
                 });
+                
+                // ===== NÚMERO DO TERRITÓRIO NO CENTRO =====
+                const territoryCenter = calculateTerritoryCenter(t);
+                if (territoryCenter) {
+                    const numMarker = L.marker(territoryCenter, {
+                        icon: L.divIcon({
+                            className: 'territory-number-marker',
+                            html: `<div class="territory-number">${t}</div>`,
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20]
+                        }),
+                        interactive: false
+                    }).addTo(appState.overlayGroup);
+                }
             }
 
-            // Renderiza vértices
+            // ===== RENDERIZA VÉRTICES =====
             vertexMap.forEach(v => {
                 const isSelected = appState.selectedVertex === v.id;
                 const vertexColor = isSelected ? '#ffd700' : '#4facfe';
-                const vertexRadius = isSelected ? 7 : 4;   // estava 10 : 7
-
+                const vertexRadius = isSelected ? 7 : 4;
+                
                 const circle = L.circleMarker([v.lat, v.lng], {
                     radius: vertexRadius,
                     fillColor: vertexColor,
@@ -1274,32 +1328,35 @@
                     fillOpacity: 1,
                     className: isSelected ? 'vertex selected' : 'vertex'
                 }).addTo(appState.overlayGroup);
-
+                
                 // Guarda dados no elemento para referência
                 circle.vertexId = v.id;
                 circle.vertexEdges = v.edges;
-
-                circle.on('click', function (e) {
+                
+                circle.on('click', function(e) {
                     L.DomEvent.stopPropagation(e);
                     handleVertexClick(v.id, v.edges);
                 });
             });
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
         // INTERAÇÕES
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
+        
+        // Clique em vértice
         function handleVertexClick(vertexId, edges) {
             if (appState.selectedVertex) {
                 const prevVertex = appState.selectedVertex;
-
+                
+                // Se clicou no mesmo vértice, cancela seleção
                 if (prevVertex === vertexId) {
                     appState.selectedVertex = null;
                     renderQuadras();
                     showStatus('Seleção cancelada');
                     return;
                 }
-
+                
                 // Encontra vértice anterior e suas arestas
                 let prevEdges = [];
                 appState.overlayGroup.eachLayer(layer => {
@@ -1307,7 +1364,8 @@
                         prevEdges = layer.vertexEdges || [];
                     }
                 });
-
+                
+                // Verifica se há aresta em comum
                 const commonEdge = edges.find(e => prevEdges.includes(e));
                 if (commonEdge) {
                     toggleEdge(commonEdge);
@@ -1324,19 +1382,22 @@
                 showStatus('Vértice selecionado. Toque em um <strong>vértice vizinho</strong> para marcar a aresta');
             }
         }
-
+        
+        // Clique em aresta
         function handleEdgeClick(edgeId) {
             toggleEdge(edgeId);
             appState.selectedVertex = null;
             renderQuadras();
         }
-
+        
+        // Clique em quadra (abre modal)
         function handleQuadraClick(qId, tId, quadra) {
             const verts = quadVertices[qId];
             const numEdges = verts ? verts.length : 4;
             openModal(qId, tId, quadra, numEdges);
         }
-
+        
+        // Alterna marcação de aresta
         function toggleEdge(edgeId) {
             if (appState.marks[edgeId]) {
                 delete appState.marks[edgeId];
@@ -1344,48 +1405,49 @@
                 appState.marks[edgeId] = true;
             }
             saveState();
-
+            
             const parts = edgeId.split('_');
             const t = parts[0].replace('T', '');
             const q = parts[1].replace('Q', '');
             const e = parts[2];
             const action = appState.marks[edgeId] ? '✅ MARCADA' : '❌ DESMARCADA';
+            
             showStatus(`Território ${t}, Quadra ${q}, Face ${e.replace('E', '')} <strong>${action}</strong>`);
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
         // MODAL DE FACES
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
         function openModal(qId, tId, quadra, numEdges) {
             const modal = document.getElementById('modalOverlay');
             const title = document.getElementById('modalTitle');
             const subtitle = document.getElementById('modalSubtitle');
             const grid = document.getElementById('facesGrid');
-
+            
             title.textContent = `Quadra ${quadra} - Território ${tId}`;
             subtitle.textContent = `Toque para marcar/desmarcar as ${numEdges} faces`;
             grid.innerHTML = '';
-
+            
             const edgeNames = ['Topo', 'Lateral Direita', 'Base', 'Lateral Esquerda'];
-            if (numEdges === 5) edgeNames.push('Divisão');
-
+            if (numEdges === 5) edgeNames.push('Extra');
+            
             for (let i = 0; i < numEdges; i++) {
                 const edgeId = `${qId}_E${i}`;
                 const isMarked = appState.marks[edgeId] || false;
-
+                
                 const btn = document.createElement('button');
                 btn.className = isMarked ? 'face-btn marked' : 'face-btn';
                 btn.innerHTML = `
-      <span class="face-indicator"></span>
-      <span>Face ${i + 1}: ${edgeNames[i] || 'Face ' + (i + 1)}</span>
-    `;
+                    <span class="face-indicator"></span>
+                    <span>Face ${i + 1}: ${edgeNames[i] || 'Face ' + (i + 1)}</span>
+                `;
                 btn.onclick = () => toggleEdgeFromModal(edgeId, btn);
                 grid.appendChild(btn);
             }
-
+            
             modal.classList.add('active');
         }
-
+        
         function toggleEdgeFromModal(edgeId, btnElement) {
             if (appState.marks[edgeId]) {
                 delete appState.marks[edgeId];
@@ -1397,18 +1459,19 @@
             renderQuadras();
             saveState();
         }
-
+        
         function closeModal() {
             document.getElementById('modalOverlay').classList.remove('active');
         }
-
-        document.getElementById('modalOverlay').addEventListener('click', function (e) {
+        
+        // Fecha modal ao clicar fora
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
-
-        // ═══════════════════════════════════════════════════════════════════
-        // MARCAR / DESMARCAR TODAS DE UM TERRITÓRIO
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
+        // MARCAR/DESMARCAR TODAS AS ARESTAS DE UM TERRITÓRIO
+        // =====================================================
         function getTerritoryNumber() {
             const input = document.getElementById('territoryInput');
             const value = parseInt(input.value, 10);
@@ -1419,7 +1482,7 @@
             }
             return value;
         }
-
+        
         function getTerritoryEdgeIds(territoryNum) {
             const edgeIds = [];
             const data = territoriesData[territoryNum];
@@ -1433,25 +1496,26 @@
             });
             return edgeIds;
         }
-
+        
         function markAllTerritoryEdges() {
             const territoryNum = getTerritoryNumber();
             if (!territoryNum) return;
-
+            
             const edgeIds = getTerritoryEdgeIds(territoryNum);
             edgeIds.forEach(edgeId => {
                 appState.marks[edgeId] = true;
             });
+            
             appState.selectedVertex = null;
             saveState();
             renderQuadras();
-            showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✅`);
+            showStatus(`Território <strong>${territoryNum}</strong>: ${edgeIds.length} arestas <strong>marcadas</strong> ✓`);
         }
-
+        
         function unmarkAllTerritoryEdges() {
             const territoryNum = getTerritoryNumber();
             if (!territoryNum) return;
-
+            
             const edgeIds = getTerritoryEdgeIds(territoryNum);
             let removed = 0;
             edgeIds.forEach(edgeId => {
@@ -1460,30 +1524,31 @@
                     removed++;
                 }
             });
+            
             appState.selectedVertex = null;
             saveState();
             renderQuadras();
-            showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ❌`);
+            showStatus(`Território <strong>${territoryNum}</strong>: ${removed} arestas <strong>desmarcadas</strong> ✗`);
         }
-
-        // ═══════════════════════════════════════════════════════════════════
-        // CONTROLES DE MAPA
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // CONTROLES DE ZOOM E VISUALIZAÇÃO
+        // =====================================================
         function zoomIn() {
             if (appState.map) appState.map.zoomIn();
         }
+        
         function zoomOut() {
             if (appState.map) appState.map.zoomOut();
         }
+        
         function resetView() {
             if (appState.map) {
                 appState.map.setView(MAP_CENTER, MAP_ZOOM);
             }
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
         // MOSTRAR TERRITÓRIO NA TELA
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
         const calibrations = {
             "1": { center: [-23.541000, -46.509000], zoom: 17 },
             "2": { center: [-23.539694, -46.506243], zoom: 17 },
@@ -1500,17 +1565,16 @@
             "13": { center: [-23.541495, -46.496372], zoom: 17 },
             "14": { center: [-23.538191, -46.495535], zoom: 17.4 },
             "15": { center: [-23.537513, -46.492381], zoom: 17.4 },
-            "16": { center: [-23.540679, -46.493465], zoom: 17.4 },
-            // Adicione calibrações para os demais territórios
+            "16": { center: [-23.540679, -46.493465], zoom: 17.4 }
         };
-
+        
         function mostrarTerritorioNaTela() {
             const num = parseInt(document.getElementById('territoryInput').value, 10);
             if (isNaN(num) || num < 1 || num > 16) {
                 alert('Digite um número de território válido (1-16).');
                 return;
             }
-
+            
             const cfg = calibrations[num];
             if (cfg && appState.map) {
                 appState.map.setView(cfg.center, cfg.zoom);
@@ -1519,11 +1583,11 @@
                 calcularPosicaoAutomatica(num);
             }
         }
-
+        
         function calcularPosicaoAutomatica(num) {
             const data = territoriesData[num];
             if (!data || !appState.map) return;
-
+            
             const bounds = L.latLngBounds();
             data.quadras.forEach(quadra => {
                 const qId = `T${num}_Q${quadra}`;
@@ -1532,7 +1596,7 @@
                     verts.forEach(v => bounds.extend(v));
                 }
             });
-
+            
             if (bounds.isValid()) {
                 appState.map.fitBounds(bounds, { padding: [50, 50] });
             }
@@ -1559,40 +1623,23 @@
             if (value > 16) { value = 16; input.value = 16; }
             updateArrowButtons(value);
         }
-
-        function updateArrowButtons(currentValue) {
-            const btnDec = document.getElementById('btnDecrement');
-            const btnInc = document.getElementById('btnIncrement');
-            if (!btnDec || !btnInc) return;
-            btnDec.disabled = (!currentValue || currentValue <= 1);
-            btnInc.disabled = (currentValue >= 16);
-        }
-
-        // ═══════════════════════════════════════════════════════════════════
-        // RESETAR TODAS AS QUADRAS de todos os TERRITÓRIOS E EXPORTAR
-        // ═══════════════════════════════════════════════════════════════════
-        /*function resetMarks() {
-            const count = Object.keys(appState.marks).length;
-            if (count === 0) {
-                showStatus('Não há marcações');
-                return;
-            }
-            if (confirm(`Apagar ${count} marcações de TODOS os usuários?`)) {
-                appState.marks = {};
-                appState.selectedVertex = null;
-                saveState();
-                renderQuadras();
-                showStatus('Todas removidas 🗑️');
-            }
-        } */
-
+        
+        // ==============================
+        // EXPORTAR DADOS
         function exportData() {
             const data = {
                 exportDate: new Date().toISOString(),
                 version: '8.0-osm',
                 exportedBy: currentUser,
-                marks: appState.marks
+                marks: appState.marks,
+                colors: {
+                    1: COLORS.azulClaro,
+                    2: COLORS.verdeClaro,
+                    3: COLORS.rosa,
+                    4: COLORS.marromClaro
+                }
             };
+            
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1602,48 +1649,55 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            
             showStatus('Exportado! 💾');
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =========================
         // FEEDBACK VISUAL
-        // ═══════════════════════════════════════════════════════════════════
         let statusTimeout;
         function showStatus(text) {
             const panel = document.getElementById('statusPanel');
             const textEl = document.getElementById('statusText');
             textEl.innerHTML = text;
             panel.classList.add('visible');
+            
             clearTimeout(statusTimeout);
             statusTimeout = setTimeout(() => {
                 panel.classList.remove('visible');
             }, 4000);
         }
-
+        
         function showLoading(text) {
             document.getElementById('loadingText').textContent = text;
             document.getElementById('loadingOverlay').classList.add('active');
         }
-
+        
         function hideLoading() {
             document.getElementById('loadingOverlay').classList.remove('active');
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        function updateSyncStatus(status, text) {
+            const el = document.getElementById('syncStatus');
+            el.className = `sync-indicator ${status}`;
+            el.textContent = text;
+        }
+        
+        // =====================================================
         // INTERAÇÕES DO MAPA
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
         function setupMapInteractions() {
             // Fecha modal com Escape
-            document.addEventListener('keydown', function (e) {
+            document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') closeModal();
                 if (e.key === '+' || e.key === '=') zoomIn();
                 if (e.key === '-' || e.key === '_') zoomOut();
                 if (e.key === '0') resetView();
             });
-
+            
             // Salva posição do mapa ao mover
             if (appState.map) {
-                appState.map.on('moveend', function () {
+                appState.map.on('moveend', function() {
                     try {
                         const center = appState.map.getCenter();
                         const zoom = appState.map.getZoom();
@@ -1653,10 +1707,10 @@
                 });
             }
         }
-
-        // ═══════════════════════════════════════════════════════════════════
+        
+        // =====================================================
         // RESTAURAR POSIÇÃO DO MAPA (localStorage)
-        // ═══════════════════════════════════════════════════════════════════
+        // =====================================================
         function restoreMapPosition() {
             try {
                 const savedCenter = localStorage.getItem('mapCenter');
@@ -1668,9 +1722,20 @@
             } catch (e) { }
         }
 
-        // Inicializa botões
+        // =========================
+        // INICIALIZA BOTÕES
+        // =========================
         updateArrowButtons(null);
+        
+        function updateArrowButtons(currentValue) {
+            // Função auxiliar para atualizar estado dos botões (se existirem)
+            const btnDec = document.getElementById('btnDecrement');
+            const btnInc = document.getElementById('btnIncrement');
+            if (!btnDec || !btnInc) return;
+            
+            btnDec.disabled = (!currentValue || currentValue <= 1);
+            btnInc.disabled = (currentValue >= 16);
+        }
     </script>
 </body>
-
 </html>
