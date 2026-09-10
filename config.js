@@ -1,10 +1,13 @@
+// Configuração global usada pelo Firebase v8 compat em t28K.html.
 const firebaseConfig = {
-    apiKey: "AIzaSyA6u0NePsHWgdEnfZHadrKBD2Ga1fEow7A",
-    authDomain: "mapa3-terr.firebaseapp.com",    // "://firebaseapp.com",
-    databaseURL: "https://mapa3-terr-default-rtdb.firebaseio.com",  // "https://firebaseio.com",
-    projectId: "mapa3-terr",
-    storageBucket: "mapa3-terr.firebasestorage.app",    // Armazenamento de arquivos
-    messagingSenderId: "15579279461",                 // Notificações
-    appId: "1:15579279461:web:5ce5d4705353506262968c",   // ID do app
-    // ...
+   apiKey: "AIzaSyCdPZFbwSk_iehNHUPgO-LQ3Clog87f2VM",
+  authDomain: "corte2-93531.firebaseapp.com",
+  databaseURL: "https://corte2-93531-default-rtdb.firebaseio.com",
+  projectId: "corte2-93531",
+  storageBucket: "corte2-93531.firebasestorage.app",
+  messagingSenderId: "79550857149",
+  appId: "1:79550857149:web:8f7ff2a38975989e5adcd4"
 };
+
+// Initialize Firebase   novo projeto corte2 com FirebaseRealtimeData
+//const app = initializeApp(firebaseConfig);
